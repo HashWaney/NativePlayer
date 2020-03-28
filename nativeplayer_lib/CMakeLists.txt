@@ -2,13 +2,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 #添加ffmpeg的头文件
 include_directories(
-        src/main/cpp/include/libswscale
-        src/main/cpp/include/libswresample
-        src/main/cpp/include/libavutil
-        src/main/cpp/include/libavformat
-        src/main/cpp/include/libavcodec
-        src/main/cpp/include/libswscale
-        src/main/cpp/include/libavfilter
+        src/main/cpp/include
         )
 
 
