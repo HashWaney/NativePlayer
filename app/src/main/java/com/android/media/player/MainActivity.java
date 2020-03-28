@@ -5,13 +5,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import com.android.media.nativeplayerlib.TestJNI;
+
 public class MainActivity extends AppCompatActivity {
 
     // 1.将动态库加载移植到nativeplaylib库中
+
     // Used to load the 'native-lib' library on application startup.
 //    static {
 //        System.loadLibrary("native-lib");
 //    }
+
+
+    private TestJNI testJNI;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,6 +26,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Example of a call to a native method
         TextView tv = findViewById(R.id.sample_text);
+        testJNI =new TestJNI();
+
+        tv.setText(testJNI.stringFromJNI());
 //        tv.setText(stringFromJNI());
     }
 

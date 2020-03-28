@@ -38,5 +38,5 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     //将播放器库与主工程进行依赖，将native层的操作放在播放器库进行，主工程只做调用和业务处理
-//    implementation project(":nativeplayer_lib")
+    implementation project(":nativeplayer_lib")
 }
