@@ -1,8 +1,11 @@
 #include <jni.h>
 #include <string>
 
+
+
 extern "C"
 JNIEXPORT jstring JNICALL
+
 Java_com_android_media_nativeplayerlib_TestJNI_stringFromJNI(JNIEnv *env, jobject instance) {
 
     // TODO
