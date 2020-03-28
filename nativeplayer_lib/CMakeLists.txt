@@ -1,19 +1,21 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 #添加ffmpeg的头文件
-include_directories(src/main/cpp/include)
+include_directories(
+        src/main/cpp/include/libswscale
+        src/main/cpp/include/libswresample
+        src/main/cpp/include/libavutil
+        src/main/cpp/include/libavformat
+        src/main/cpp/include/libavcodec
+        src/main/cpp/include/libswscale
+        src/main/cpp/include/libavfilter
+        )
 
 
 #工程顶层目录 PROJECT_SOURCE_DIR 也就是nativeplay_lib这个工程的当前目录
 #CMAKE_ANDROID_API
 #set(CMAKE_ANDROID_ARCH_ABI ${ANDROID_ABI})
-add_library(
-        native-lib
 
-        SHARED
-
-        src/main/cpp/native-lib.cpp
-)
 
 add_library(avcodec SHARED IMPORTED)
 set_target_properties(avcodec
@@ -62,7 +64,13 @@ set_target_properties(swscale
 
 
 
+add_library(
+        native-lib
 
+        SHARED
+
+        src/main/cpp/native-lib.cpp
+)
 
 find_library( # Sets the name of the path variable.
         log-lib
