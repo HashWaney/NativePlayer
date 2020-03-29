@@ -94,5 +94,21 @@
 
 
 
+## C++ 调用Java 层方法 回调C++数据到Java层
 
+    主线程：
+        JNIEnv* env;
+
+        1. jclass jclazz = env->GetObjectClass(jobject);
+        2. jmethodID jmid = env->GetMethodID(jclazz,"Java中定义的方法","(方法参数)方法返回值");
+        3. env->Call...Method(jobject,jmid,...);
+    子线程：
+        明确JNIEnv 是与线程绑定的
+        pthread_create();创建线程，是不能直接使用JNI定义方法中的env和jobject的
+        但是JavaVM 是整个进程唯一的，
+        因此当我们System.loadLibrary();就会触发JNI_OnLoad方法，该方法中会有JavaVM指针，
+        通过JavaVM* vm 的attachCurrentThread()拿到与当前线程绑定的env；
+        但是最后记住需要调用vm的DetachCurrentThread和pthread_exit(&child)来释放内存，防止内存泄漏
+
+        具体案例可以查看native-lib.cpp
 
