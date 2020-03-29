@@ -246,8 +246,8 @@ void *childCallback(void *data) {
     env->CallVoidMethod(jobj, jmethodID1, type, jmsg);
     LOGD("childCallback----8")
 
-    // TODO 当使用env->DeleteLocalRef(jmsg) 报错，native 卡死，原因是移除的引用的地址指向不对。
-    env->DeleteLocalRef(jmsg);
+    // TODO 当使用env->DeleteGlobalRef(jmsg) 报错，native 卡死，原因是移除的引用的地址指向不对。原因在于jmsg是方法局部变量，不是全局引用
+    env->DeleteGlobalRef(jmsg);
     LOGD("childCallback----9")
     jvm->DetachCurrentThread();
     LOGD("childCallback----10")
