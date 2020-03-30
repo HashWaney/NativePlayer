@@ -70,7 +70,9 @@ void SimpleAvCodec::decodePrepared() {
         if (avCodecContext->streams[i] != NULL) {
             if (avCodecContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
                 avCodecParameters = avCodecContext->streams[i]->codecpar;
+                //角标记录是为了在进行解码的时候，从AVPacket包中匹配到type类型等于AUDIO音频流，解码也是为了通过读取AVPacket中的音频
                 streamIndex = i;
+                LOGD("类型为AUDIO的 角标为 %d:", streamIndex);
 
             }
         }
@@ -102,6 +104,42 @@ void SimpleAvCodec::decodePrepared() {
     //该处是一个子线程。
     callJavaBridge->callPrepared(CHILD_THREAD);
 
+
+}
+
+/**
+ * 进行解码操作
+ */
+void SimpleAvCodec::startDecode() {
+    int count = 0;
+    // TODO
+    while (1) {
+        //死循环，分配内存
+        AVPacket *avPacket = av_packet_alloc();
+
+        if (av_read_frame(avCodecContext, avPacket) == 0) { //读取成功
+            if (avPacket->stream_index == streamIndex) {
+                count++;
+                LOGD("解码第 %d 帧, 角标为 %d", count, streamIndex);
+            }
+
+            //释放内存 如果此处释放内存，会造成内存泄漏。
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+
+
+        } else {
+            //失败释放内存
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            LOGD("读取失败跳出循环")
+            break;
+
+        }
+
+    }
 
 
 }

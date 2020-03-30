@@ -27,9 +27,9 @@ public class MainActivity extends AppCompatActivity {
             public void prepared() {
                 // TODO: 2020-03-30  C++ 解码工作实现完成了，通过调用 Java 层定义的callPrepared方法来告诉外界调用者，
                 // 该结果回调是nativeplayerlib库实现的回调，是将C++层调用了库的方法之后，完成的之后的结果告知调用者，
-                Log.e(MainActivity.this.getClass().getSimpleName(), "C++ 层已经完成了解码工作了，请进行播放操作");
+                Log.e(MainActivity.this.getClass().getSimpleName(), "C++ 层已经完成了准备工作了，请进行解码操作");
 
-                audioPlayer.startPlay();
+                audioPlayer.startDecode();
             }
         });
 

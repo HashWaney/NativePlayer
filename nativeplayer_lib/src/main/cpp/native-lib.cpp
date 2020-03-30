@@ -73,11 +73,15 @@ jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
 }
 
+/**
+ * 该方法是用来进行解码操作
+ */
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_android_media_nativeplayerlib_AudioPlayer_startPlay(JNIEnv *env, jobject instance) {
-
-    // TODO
+Java_com_android_media_nativeplayerlib_AudioPlayer_startDecode(JNIEnv *env, jobject instance) {
+    if (avCodec != NULL) {
+        avCodec->startDecode();
+    }
 
 }

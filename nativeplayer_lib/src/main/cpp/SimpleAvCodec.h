@@ -32,6 +32,8 @@ public:
     void prepared();
 
     void decodePrepared();
+
+    void startDecode();
 };
 
 
