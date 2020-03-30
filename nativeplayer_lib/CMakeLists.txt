@@ -64,6 +64,8 @@ add_library(
         SHARED
 
         src/main/cpp/native-lib.cpp
+        src/main/cpp/SimpleAvCodec.cpp
+        src/main/cpp/CallJavaBridge.cpp
 )
 
 find_library( # Sets the name of the path variable.

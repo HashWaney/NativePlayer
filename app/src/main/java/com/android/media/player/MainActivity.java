@@ -3,38 +3,42 @@ package com.android.media.player;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
+import com.android.media.nativeplayerlib.AudioPlayer;
 import com.android.media.nativeplayerlib.TestJNI;
 
 public class MainActivity extends AppCompatActivity {
 
-    // 1.将动态库加载移植到nativeplaylib库中
+    private String url = "http://music.163.com/song/media/outer/url?id=281951.mp3";
 
-    // Used to load the 'native-lib' library on application startup.
-//    static {
-//        System.loadLibrary("native-lib");
-//    }
+    private AudioPlayer audioPlayer = null;
 
-
-    private TestJNI testJNI;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        audioPlayer = new AudioPlayer();
+        audioPlayer.setICallNativePrepared(new AudioPlayer.ICallNativePrepared() {
+            @Override
+            public void prepared() {
+                // TODO: 2020-03-30  C++ 解码工作实现完成了，通过调用 Java 层定义的callPrepared方法来告诉外界调用者，
+                // 该结果回调是nativeplayerlib库实现的回调，是将C++层调用了库的方法之后，完成的之后的结果告知调用者，
+                Log.e(MainActivity.this.getClass().getSimpleName(), "C++ 层已经完成了解码工作了，请进行播放操作");
 
-        // Example of a call to a native method
-        TextView tv = findViewById(R.id.sample_text);
-        testJNI =new TestJNI();
+//                audioPlayer.startPlay();
+            }
+        });
 
-        tv.setText(testJNI.stringFromJNI());
-//        tv.setText(stringFromJNI());
     }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-//    public native String stringFromJNI();
+
+    //进行解码之前的准备阶段 --> 进行解码工作
+    public void prepared(View view) {
+        audioPlayer.prepared(url);
+
+    }
 }
