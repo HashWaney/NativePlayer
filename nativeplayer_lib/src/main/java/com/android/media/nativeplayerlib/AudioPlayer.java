@@ -45,7 +45,7 @@ public class AudioPlayer {
 
     public native void prepared(String url);
 
-//    public native void startPlay();
+    public native void startPlay();
 
 
     //C++ 调用

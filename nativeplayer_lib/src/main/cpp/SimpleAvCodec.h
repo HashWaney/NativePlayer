@@ -11,6 +11,8 @@ extern "C"
 #include "include/libavcodec/avcodec.h"
 };
 
+#include "CallJavaBridge.h"
+
 #include "pthread.h"
 #include "AndroidLog.h"
 
@@ -20,10 +22,10 @@ public:
     AVCodecParameters *avCodecParameters = NULL;
     AVFormatContext *avCodecContext = NULL;
     int streamIndex = -1;
-
+    CallJavaBridge *callJavaBridge = NULL;
 
 public:
-    SimpleAvCodec(const char *_url);
+    SimpleAvCodec(const char *_url, CallJavaBridge *callJavaBridge);
 
     ~SimpleAvCodec();
 

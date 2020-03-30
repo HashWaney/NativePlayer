@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
                 // 该结果回调是nativeplayerlib库实现的回调，是将C++层调用了库的方法之后，完成的之后的结果告知调用者，
                 Log.e(MainActivity.this.getClass().getSimpleName(), "C++ 层已经完成了解码工作了，请进行播放操作");
 
-//                audioPlayer.startPlay();
+                audioPlayer.startPlay();
             }
         });
 

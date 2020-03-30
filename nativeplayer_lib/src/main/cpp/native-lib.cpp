@@ -28,6 +28,8 @@ Java_com_android_media_nativeplayerlib_TestJNI_stringFromJNI(JNIEnv *env, jobjec
 
 
 SimpleAvCodec *avCodec = NULL;
+CallJavaBridge *callJavaBridge = NULL;
+_JavaVM *javaVM = NULL;
 
 
 extern "C"
@@ -37,16 +39,39 @@ Java_com_android_media_nativeplayerlib_AudioPlayer_prepared(JNIEnv *env, jobject
     const char *url = env->GetStringUTFChars(url_, 0);
 
     if (avCodec == NULL) {
+        if (callJavaBridge == NULL) {
+            callJavaBridge = new CallJavaBridge(javaVM, env, &instance);
+
+        }
         LOGD("avCodec init ")
-        avCodec = new SimpleAvCodec(url);
+        avCodec = new SimpleAvCodec(url, callJavaBridge);
         LOGD("avCodec prepared start")
         avCodec->prepared();
         LOGD("avCodec prepared end")
+
     }
 
 //    env->ReleaseStringUTFChars(url_, url);
 }
 
+extern "C"
+JNIEXPORT
+jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+
+    JNIEnv *env;
+    javaVM = vm;
+
+
+    // & 就是取env的指针  env 本身就是一个指针 然后通过取地址符 就相当于取了env指针的指针地址。
+
+    jint i = vm->GetEnv((void **) &env, JNI_VERSION_1_6);
+    if (i != JNI_OK) {
+        return JNI_ERR;
+    }
+    return JNI_VERSION_1_6;
+
+
+}
 
 
 extern "C"

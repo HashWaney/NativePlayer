@@ -6,7 +6,7 @@ A native player  for audio  play
 
    `Fatal signal 11 (SIGSEGV), code 1, fault addr 0x0 in tid 31286 `
 
-    ```c++
+    ```
 
         pthread_t* thread;
 

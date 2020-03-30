@@ -6,20 +6,24 @@
 #define PLAYER_CALLJAVABRIDGE_H
 
 #include "jni.h"
-
+#include "AndroidLog.h"
+#define MAIN_THREAD  0
+#define CHILD_THREAD 1
 class CallJavaBridge {
 public:
     _JavaVM *javaVM = NULL;
     JNIEnv *env = NULL;
-    jobject jclazz;
+    jobject jobj;
     jmethodID jmethodId;
 
 
 public:
-    CallJavaBridge(_JavaVM *javaVM, JNIEnv *evn, jobject jclazz);
+    CallJavaBridge(_JavaVM *javaVM, JNIEnv *evn, jobject *jclazz);
 
     ~CallJavaBridge();
 
+    //C++完成解码操作，将结果通知Java层调用者
+    void callPrepared(int type);
 
 };
 

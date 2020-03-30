@@ -5,9 +5,9 @@
 #include "SimpleAvCodec.h"
 
 
-SimpleAvCodec::SimpleAvCodec(const char *_url) {
+SimpleAvCodec::SimpleAvCodec(const char *_url, CallJavaBridge *callJavaBridge) {
     this->_url = _url;
-
+    this->callJavaBridge = callJavaBridge;
 
 }
 
@@ -44,7 +44,7 @@ void SimpleAvCodec::prepared() {
 void SimpleAvCodec::decodePrepared() {
 
     LOGD("decoder Prepared init ")
-//1.初始化组件（复用器 解复用器，解码器）
+    //1.初始化组件（复用器 解复用器，解码器）
     av_register_all();
     //2.网络初始化
     avformat_network_init();
@@ -93,10 +93,15 @@ void SimpleAvCodec::decodePrepared() {
     }
 
 
+    //6。打开一个解码器
     if (avcodec_open2(avCodecContext, avCodec, NULL) != 0) {
         LOGD("can not open the codec")
         return;
     };
 
-    //TODO 调用Java的准备方法。
+    //该处是一个子线程。
+    callJavaBridge->callPrepared(CHILD_THREAD);
+
+
+
 }
