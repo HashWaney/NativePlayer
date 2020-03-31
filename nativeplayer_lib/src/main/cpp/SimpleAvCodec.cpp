@@ -5,10 +5,12 @@
 #include "SimpleAvCodec.h"
 
 
-SimpleAvCodec::SimpleAvCodec(const char *_url, CallJavaBridge *callJavaBridge) {
+SimpleAvCodec::SimpleAvCodec(AVPlayStatus *avPlayStatus, const char *_url,
+                             CallJavaBridge *callJavaBridge) {
     this->_url = _url;
     this->callJavaBridge = callJavaBridge;
-
+    this->avPlayStatus = avPlayStatus;
+    avPacketQueue = new AVPacketQueue(avPlayStatus);
 }
 
 SimpleAvCodec::~SimpleAvCodec() {
@@ -42,6 +44,11 @@ void SimpleAvCodec::prepared() {
 }
 
 void SimpleAvCodec::decodePrepared() {
+    if (avPlayStatus->exit) {
+        LOGD("当前状态是退出状态 无需进行解码准备阶段。");
+        return;
+    }
+
 
     LOGD("decoder Prepared init ")
     //1.初始化组件（复用器 解复用器，解码器）
@@ -112,7 +119,15 @@ void SimpleAvCodec::decodePrepared() {
  */
 void SimpleAvCodec::startDecode() {
     int count = 0;
-    // TODO
+    // TODO  此处需要进行队列缓存操作，现在采取的方式是先解码AVPacket数据包，比较耗时，因此将解码的数据放在队列中，然后后续播放操作直接从队列中读取
+    //形成一种边解码边读取数据的并行操作，加快效率
+//    if (avPlayStatus == NULL || avPlayStatus->exit) {
+//        LOGD("avPlayStatus 为NULL 或者当前解码过程为退出状态，无需进行以下解码操作")
+//        return;
+//    }
+//
+
+
     while (1) {
         //死循环，分配内存
         AVPacket *avPacket = av_packet_alloc();
@@ -121,25 +136,39 @@ void SimpleAvCodec::startDecode() {
             if (avPacket->stream_index == streamIndex) {
                 count++;
                 LOGD("解码第 %d 帧, 角标为 %d", count, streamIndex);
+                //TODO  模拟入队操作
+                avPacketQueue->putAvPacket(avPacket);
             }
 
             //释放内存 如果此处释放内存，会造成内存泄漏。
+//            该Packet有引用计数（packet->buf不为空）
             av_packet_free(&avPacket);
             av_free(avPacket);
-            avPacket = NULL;
+            //TODO  这里为什么不做置空操作
+//            avPacket = NULL;
 
 
         } else {
             //失败释放内存
             av_packet_free(&avPacket);
             av_free(avPacket);
-            avPacket = NULL;
+//            avPacket = NULL;
             LOGD("读取失败跳出循环")
             break;
 
         }
 
     }
+    //模拟出队列操作
+    while (avPacketQueue->getAVPacketQueueSize() > 0) {
+        AVPacket *packet = av_packet_alloc();
+        avPacketQueue->getAvPacket(packet);
+        //TODO 释放分配的内存
+        av_packet_free(&packet);
+        av_free(packet);
+        packet = NULL;
+    }
+    LOGD("解码完成了");
 
 
 }

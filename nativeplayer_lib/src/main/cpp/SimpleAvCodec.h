@@ -16,6 +16,10 @@ extern "C"
 #include "pthread.h"
 #include "AndroidLog.h"
 
+#include "AVPacketQueue.h"
+#include "AVPlayStatus.h"
+
+
 class SimpleAvCodec {
 public:
     const char *_url;
@@ -23,9 +27,15 @@ public:
     AVFormatContext *avCodecContext = NULL;
     int streamIndex = -1;
     CallJavaBridge *callJavaBridge = NULL;
+//
+    AVPacketQueue *avPacketQueue = NULL;
+    AVPlayStatus *avPlayStatus = NULL;
+
+
+
 
 public:
-    SimpleAvCodec(const char *_url, CallJavaBridge *callJavaBridge);
+    SimpleAvCodec(AVPlayStatus* avPlayStatus,const char *_url, CallJavaBridge *callJavaBridge);
 
     ~SimpleAvCodec();
 

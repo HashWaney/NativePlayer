@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 #添加ffmpeg的头文件
-include_directories(
-        src/main/cpp/include
-        )
+include_directories(src/main/cpp/include)
 
 
 #工程顶层目录 PROJECT_SOURCE_DIR 也就是nativeplay_lib这个工程的当前目录
@@ -52,6 +50,7 @@ set_target_properties(swresample
 
 
 add_library(swscale SHARED IMPORTED)
+
 set_target_properties(swscale
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/libswscale.so)
@@ -66,6 +65,8 @@ add_library(
         src/main/cpp/native-lib.cpp
         src/main/cpp/SimpleAvCodec.cpp
         src/main/cpp/CallJavaBridge.cpp
+        src/main/cpp/AVPacketQueue.cpp
+        src/main/cpp/AVPlayStatus.cpp
 )
 
 find_library( # Sets the name of the path variable.

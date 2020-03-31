@@ -31,6 +31,8 @@ SimpleAvCodec *avCodec = NULL;
 CallJavaBridge *callJavaBridge = NULL;
 _JavaVM *javaVM = NULL;
 
+AVPlayStatus *avPlayStatus = NULL;
+
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -43,8 +45,12 @@ Java_com_android_media_nativeplayerlib_AudioPlayer_prepared(JNIEnv *env, jobject
             callJavaBridge = new CallJavaBridge(javaVM, env, &instance);
 
         }
+        if (avPlayStatus == NULL) {
+            avPlayStatus = new AVPlayStatus();
+
+        }
         LOGD("avCodec init ")
-        avCodec = new SimpleAvCodec(url, callJavaBridge);
+        avCodec = new SimpleAvCodec(avPlayStatus,url, callJavaBridge);
         LOGD("avCodec prepared start")
         avCodec->prepared();
         LOGD("avCodec prepared end")

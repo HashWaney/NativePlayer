@@ -1,5 +1,8 @@
 package com.android.media.nativeplayerlib;
 
+import android.text.TextUtils;
+import android.util.Log;
+
 import java.nio.file.Path;
 
 /**
@@ -54,8 +57,33 @@ public class AudioPlayer {
         if (iCallNativePrepared != null) {
             iCallNativePrepared.prepared();
         }
+    }
 
 
+    public void prepared()
+    {
+        Log.i("HASH","判断URL是否为null："+TextUtils.isEmpty(url));
+        if (TextUtils.isEmpty(url))
+        {
+            Log.i("HASH","url 为空 不进行解码操作");
+            return;
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                prepared(url);
+            }
+        }).start();
+    }
+    public void start()
+    {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                startDecode();
+            }
+        }).start();
     }
 
 
