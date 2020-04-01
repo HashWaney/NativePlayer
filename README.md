@@ -116,6 +116,19 @@
                    SL_RECORDSTATE_RECORDING
          (*recorderItf)->SetRecordState(recorderItd,state);
 
+    git 小技巧 使用：
+
+       1。当前项目没有关联过远程仓库，那么要关联远程仓库使用以下命令
+
+
+        git remote add origin https://github.com/HashWaney/NativePlayer
+
+       2。 如果远程分支没有相关分支
+
+            可使用
+
+        git push origin 本地分支(比如我当前的是master分支) : dev_opensl(远程分支没有就会创建一个名字叫做dev_opensl分支)
+
 
 
 
