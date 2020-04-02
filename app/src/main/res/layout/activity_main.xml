@@ -22,5 +22,12 @@
         android:onClick="stopRecord"
         android:text="暂停" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_margin="10dp"
+        android:text="播放PCM"
+        android:onClick="playPcm"
+        android:layout_height="wrap_content" />
+
 
 </LinearLayout>

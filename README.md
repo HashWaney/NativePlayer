@@ -39,7 +39,11 @@
 
 
 
-### 流程分析：详细分析 查看 native-lib.cpp 文件
+    关于空指针异常排查，查看PlayCallback.cpp 文件
+
+        分析：由于JNIEnv 是和线程相关的，
+
+### 录音器 流程分析：详细分析 查看 native-lib.cpp 文件
 
   -  该处只做简要重要流程分析
 
@@ -115,6 +119,16 @@
                    SL_RECORDSTATE_PAUSED
                    SL_RECORDSTATE_RECORDING
          (*recorderItf)->SetRecordState(recorderItd,state);
+
+### 播放器流程分析
+
+
+
+
+
+
+
+
 
     git 小技巧 使用：
 
