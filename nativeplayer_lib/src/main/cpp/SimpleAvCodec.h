@@ -9,6 +9,7 @@ extern "C"
 {
 #include "include/libavformat/avformat.h"
 #include "include/libavcodec/avcodec.h"
+#include "include/libswresample/swresample.h"
 };
 
 #include "CallJavaBridge.h"
@@ -19,31 +20,48 @@ extern "C"
 #include "AVPacketQueue.h"
 #include "AVPlayStatus.h"
 
+#define SAMPLE_BUFFER_SIZE (44100*2*2)
 
 class SimpleAvCodec {
 public:
     const char *_url;
     AVCodecParameters *avCodecParameters = NULL;
-    AVFormatContext *avCodecContext = NULL;
+    AVCodecContext *avCodecContext = NULL;
+    AVFormatContext *avFormatContext = NULL;
     int streamIndex = -1;
     CallJavaBridge *callJavaBridge = NULL;
-//
     AVPacketQueue *avPacketQueue = NULL;
     AVPlayStatus *avPlayStatus = NULL;
 
+    //重采样线程
+    pthread_t play_thread;
 
+
+    int mallocResult = 0;
+    AVFrame *avFrame = NULL;
+    AVPacket *avPacket = NULL;
+
+    uint8_t *buffer = NULL;
+
+    int data_size = 0;
 
 
 public:
-    SimpleAvCodec(AVPlayStatus* avPlayStatus,const char *_url, CallJavaBridge *callJavaBridge);
+    SimpleAvCodec(AVPlayStatus *avPlayStatus, const char *_url, CallJavaBridge *callJavaBridge);
 
     ~SimpleAvCodec();
 
     void prepared();
 
-    void decodePrepared();
+    void preparedDecode();
 
     void startDecode();
+
+    void playAudio();
+
+    int resample();
+
+    void releaseResource();
 };
 
 

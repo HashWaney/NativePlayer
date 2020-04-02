@@ -33,7 +33,7 @@ void AVPacketQueue::putAvPacket(AVPacket *avPacket) {
 }
 
 //保证引用是存在的。因为你去取队列中的数据，AvPacket是指向data引用的，不存储真实的内存
-void AVPacketQueue::getAvPacket(AVPacket *packet) {
+int AVPacketQueue::getAvPacket(AVPacket *packet) {
 
 //    pthread_mutex_lock(&mutexPacket);
 //
@@ -63,14 +63,13 @@ void AVPacketQueue::getAvPacket(AVPacket *packet) {
 //
 //    pthread_mutex_unlock(&mutexPacket);
     pthread_mutex_lock(&mutexPacket);
-    while(avPlayStatus != NULL && !avPlayStatus->exit)
-    {
-        if(avPacketQueue.size() > 0)
-        {
-            AVPacket *avPacket =  avPacketQueue.front();
-            if(av_packet_ref(packet, avPacket) == 0)
-            {
+    while (avPlayStatus != NULL && !avPlayStatus->exit) {
+        if (avPacketQueue.size() > 0) {
+            AVPacket *avPacket = avPacketQueue.front();
+            if (av_packet_ref(packet, avPacket) == 0) { //成功
                 avPacketQueue.pop();
+            }else{ //失败
+                return -1;
             }
             //TODO 此处重复释放内存。导致程序崩溃。调用该方法的地方已经进行内存的释放，不用重复释放。
 //            av_packet_free(&avPacket);
@@ -78,11 +77,12 @@ void AVPacketQueue::getAvPacket(AVPacket *packet) {
 //            avPacket = NULL;
             LOGD("从队列里面取出一个AVpacket，还剩下 %d 个", avPacketQueue.size());
             break;
-        } else{
+        } else {
             pthread_cond_wait(&condPacket, &mutexPacket);
         }
     }
     pthread_mutex_unlock(&mutexPacket);
+    return 0;
 
 }
 

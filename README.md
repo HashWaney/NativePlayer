@@ -131,8 +131,33 @@ A native player  for audio  play
 
 
 
+## 关于对象释放以及对象内存空间释放问题
+
+     一般原则不要处处都进行对象的释放，可参考SimpleAcCodec.cpp 文件中，
+
+        ```
+              if (!swrContext || swr_init(swrContext) < 0) {
+                            av_packet_free(&avPacket);
+                            av_free(avPacket);
+                            avPacket = NULL;
+                            //TODO 此处不要将avFrame置为空以及释放，会导致在取采样率的时候avFrame 为空指针异常。
+            //                av_frame_free(&avFrame);
+            //                av_free(avFrame);
+            //                avFrame = NULL;
+                            swr_free(&swrContext);
+                            continue;
 
 
+        ```
+        ```
+            //TODO avFrame 在上述代码中进行释放操作，那么在使用avFrame对象就会空指针异常。切记，不要处处都进行指针内存释放，可以在功能完成之后，进行统一的释放操作。
+            int sample_rate = swr_convert(swrContext,
+                                          &buffer,
+                                          avFrame->nb_samples,
+                                          (const uint8_t **) (avFrame->data),
+                                          avFrame->nb_samples
+
+         ```
 
 
 
