@@ -128,6 +128,17 @@ A native player  for audio  play
 
 
 
+## 关于重采样
+
+    我们已经实现了音频数据的解码操作， 解码之后，数据存入到缓冲队列，缓冲队列存储的是AVPacket，
+    那么我们需要将AVPacket通过AvCodecContext 这个上下文转换为AVFrame,
+    那么重采样的对象就是AVFrame,AVFrame数据帧包含了音频数据的采样率，声道，声道布局等信息，
+
+
+    通过重采样的方式我们可以自己定义采样率，声道，声道布局来扩展pcm音频数据。
+
+
+
 
 
 
