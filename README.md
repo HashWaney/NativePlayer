@@ -145,6 +145,7 @@ A native player  for audio  play
 ## 关于对象释放以及对象内存空间释放问题
 
      一般原则不要处处都进行对象的释放，可参考SimpleAcCodec.cpp 文件中，
+     <更正一下> 对象的内存空间可以释放，空指针的异常是将对象直接置空了，导致后续使用到该对象出现空指针异常。
 
         ```
               if (!swrContext || swr_init(swrContext) < 0) {
