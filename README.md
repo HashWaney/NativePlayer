@@ -169,6 +169,15 @@ A native player  for audio  play
                                           avFrame->nb_samples
 
          ```
+## 记录一下 avformat_open_input 播放url 问题：
+
+   网络资源： url
+   本地资源： /sdcard/temp.pcm 不能播放  -1094995529(Invalid data found when processing input)
+            /sdcard/aaa.mp3  正常播放
+
+
+
+
 
 
 

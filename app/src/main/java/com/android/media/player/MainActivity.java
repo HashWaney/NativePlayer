@@ -3,6 +3,7 @@ package com.android.media.player;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -12,7 +13,8 @@ import com.android.media.nativeplayerlib.TestJNI;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
+//    private String url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
+    private String url= Environment.getExternalStorageDirectory().getAbsolutePath()+"/fyjili.mp3";
 
     private AudioPlayer audioPlayer = null;
 

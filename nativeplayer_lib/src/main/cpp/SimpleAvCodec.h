@@ -12,13 +12,17 @@ extern "C"
 #include "include/libswresample/swresample.h"
 };
 
+#include "AndroidLog.h"
 #include "CallJavaBridge.h"
 
 #include "pthread.h"
-#include "AndroidLog.h"
+
 
 #include "AVPacketQueue.h"
 #include "AVPlayStatus.h"
+
+#include "SLES/OpenSLES_Android.h"
+#include "SLES/OpenSLES.h"
 
 #define SAMPLE_BUFFER_SIZE (44100*2*2)
 
@@ -41,9 +45,28 @@ public:
     AVFrame *avFrame = NULL;
     AVPacket *avPacket = NULL;
 
-    uint8_t *buffer = NULL;
+    uint8_t *out_buffer = NULL;
 
     int data_size = 0;
+
+
+    //引擎对象 混音器对象
+    SLObjectItf engineObj, outputMixObj, pcmPlayerObj;
+    //引擎接口
+    SLEngineItf engineEngine;
+
+    //环境混音器接口
+    SLEnvironmentalReverbItf outputMixItf;
+    SLEnvironmentalReverbSettings environmentalReverbSettings;
+
+    //播放器接口
+    SLPlayItf playItf;
+
+    //缓冲区接口
+    SLAndroidSimpleBufferQueueItf androidSimpleBufferQueueItf;
+
+    //声音接口
+    SLVolumeItf volumeItf;
 
 
 public:
@@ -60,6 +83,8 @@ public:
     void playAudio();
 
     int resample();
+
+    void initOpenSlEs();
 
     void releaseResource();
 };

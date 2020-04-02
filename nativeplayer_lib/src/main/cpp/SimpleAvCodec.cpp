@@ -17,7 +17,7 @@ SimpleAvCodec::SimpleAvCodec(AVPlayStatus *avPlayStatus, const char *_url,
     this->callJavaBridge = callJavaBridge;
     this->avPlayStatus = avPlayStatus;
     avPacketQueue = new AVPacketQueue(avPlayStatus);
-    buffer = (uint8_t *)av_malloc(44100*2*2);
+    out_buffer = (uint8_t *) av_malloc(SAMPLE_BUFFER_SIZE);
 }
 
 SimpleAvCodec::~SimpleAvCodec() {
@@ -63,9 +63,13 @@ void SimpleAvCodec::preparedDecode() {
 
 
     avFormatContext = avformat_alloc_context();
+    int err_code;
+    char buf[1024];
     //3。打开一个网络音频流
-    if (avformat_open_input(&avFormatContext, _url, NULL, NULL) != 0) {
-        LOGD("can not open the resource :%s", _url);
+    if ((err_code = avformat_open_input(&avFormatContext, _url, NULL, NULL)) != 0) {
+        av_strerror(err_code, buf, 1024);
+        LOGD("can not open the resource :%s ,%d(%s)", _url, err_code, buf);
+
         return;
     }
 
@@ -174,19 +178,22 @@ void SimpleAvCodec::startDecode() {
 
 }
 
+
 //重采样以及播放音频 回调函数
 void *decodePlay(void *data) {
     SimpleAvCodec *avCodec = (SimpleAvCodec *) data;
-    avCodec->resample();
+    avCodec->initOpenSlEs();
     pthread_exit(&avCodec->play_thread);
 }
 
 
 //重采样 ---> 采样对象是  <-----解码出来的音频帧（AVframe）<---队列中的AVPacket<--通过解码器解码得到的数据。
+/**
+ * @return 获取每一次重采样的数据。
+ */
 int SimpleAvCodec::resample() {
 
     //@TEST 将采样的读取的缓存数据写入到文件中。
-
 
     while (avPlayStatus != NULL && !avPlayStatus->exit) {
         avPacket = av_packet_alloc();
@@ -273,8 +280,9 @@ int SimpleAvCodec::resample() {
                 av_free(avPacket);
                 avPacket = NULL;
                 //TODO 此处不要将avFrame置为空以及释放，会导致在取采样率的时候avFrame 为空指针异常。
-//                av_frame_free(&avFrame);
-//                av_free(avFrame);
+                //经过测试avFrame=NULL注释掉，不会导致程序崩溃，我猜想应该是avFrame分配的内存被释放了，但是引用还保留，所以
+                av_frame_free(&avFrame);
+                av_free(avFrame);
 //                avFrame = NULL;
                 swr_free(&swrContext);
                 continue;
@@ -284,7 +292,7 @@ int SimpleAvCodec::resample() {
             /////////////////////////采样转换函数，将原始的压缩数据进行重采样操作////////////////////////////////////////
 
             int sample_rate = swr_convert(swrContext,
-                                          &buffer,
+                                          &out_buffer, //输出缓冲区 （数据涞源为AVFrame的数据，也就是说该缓冲区会存储数据）
                                           avFrame->nb_samples,
                                           (const uint8_t **) (avFrame->data),
                                           avFrame->nb_samples
@@ -295,11 +303,11 @@ int SimpleAvCodec::resample() {
             data_size = sample_format * out_channels * sample_rate;
             LOGD("size of %d -> out_channel %d -> sample_format %d-> all byte %d", sample_rate,
                  out_channels, sample_format, data_size);
-            fwrite(buffer, 1, data_size, pcmFile);
-
+            fwrite(out_buffer, 1, data_size, pcmFile);
             releaseResource();
 
-
+            //TODO break 跳出循环，不然死循环。
+            break;
         } else { //分配失败
             releaseResource();
             continue;
@@ -336,6 +344,168 @@ void SimpleAvCodec::releaseResource() {
     if (swrContext != NULL) {
         swr_free(&swrContext);
     }
+}
+
+
+//缓冲队列回调
+void pcmPlayCallback(SLAndroidSimpleBufferQueueItf bufferQueueItf, void *context) {
+    SimpleAvCodec *simpleAvCodec = (SimpleAvCodec *) context;
+
+    int bufferSize = simpleAvCodec->resample();
+    if (bufferSize > 0) {
+        SLresult sLresult = (*simpleAvCodec->androidSimpleBufferQueueItf)->Enqueue(
+                simpleAvCodec->androidSimpleBufferQueueItf, simpleAvCodec->out_buffer, bufferSize);
+        if (SL_RESULT_SUCCESS != sLresult) {
+            LOGD("播放完成，跳出循环")
+
+        }
+    }
+
+
+}
+
+
+//初始化OpenSl 环境
+void SimpleAvCodec::initOpenSlEs() {
+
+    SLresult result;
+    //1. 创建引擎对象
+    slCreateEngine(&engineObj, 0, 0, 0, 0, 0);
+    (*engineObj)->Realize(engineObj, SL_BOOLEAN_FALSE);
+    (*engineObj)->GetInterface(engineObj, SL_IID_ENGINE, &engineEngine);
+
+    //SL_IID_ENVIRONMENTALREVERB
+//    const SLInterfaceID ids[1] = {SL_IID_ENGINECAPABILITIES};
+    const SLInterfaceID ids[1] = {SL_IID_ENVIRONMENTALREVERB};
+    const SLboolean require[1]{SL_BOOLEAN_FALSE};
+
+    //2.创建混音器
+    result = (*engineEngine)->CreateOutputMix(engineEngine,
+                                              &outputMixObj,
+                                              1,
+                                              ids,
+                                              require);
+
+
+    //实例化混音器接口
+    result = (*outputMixObj)->Realize(outputMixObj, SL_BOOLEAN_FALSE);
+    if (SL_RESULT_SUCCESS != result) {
+        LOGD("混音器实例化失败");
+        return;
+    }
+
+
+    //创建混音器对象
+    result = (*outputMixObj)->GetInterface(outputMixObj, SL_IID_ENVIRONMENTALREVERB, &outputMixItf);
+    if (SL_RESULT_SUCCESS != result) {
+        LOGE("混音器接口获取失败");
+        return;
+    }
+    //设置混音器环境变量
+    (*outputMixItf)->SetEnvironmentalReverbProperties(outputMixItf, &environmentalReverbSettings);
+
+
+    SLDataLocator_AndroidSimpleBufferQueue android_queue = {
+            SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2
+    };
+    SLDataFormat_PCM format_pcm = {
+            SL_DATAFORMAT_PCM, //指定播放的是Pcm数据
+            2,//声道数
+            SL_SAMPLINGRATE_44_1,//采样率
+            SL_PCMSAMPLEFORMAT_FIXED_16,//位宽2个字节
+            SL_PCMSAMPLEFORMAT_FIXED_16,//位宽2个字节
+            SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,//立体声 （前左，前右）
+            SL_BYTEORDER_LITTLEENDIAN//结束标志
+    };
+
+
+    //配置Audio数据源 就是缓冲队列中的存储的pcm数据，以及pcm数据指定的格式，声道，采样率，位宽等信息
+//    SLDataSource audioSrc ={ 缓冲队列, 格式};
+    SLDataSource audioSrc = {
+            &android_queue,
+            &format_pcm
+    };
+
+
+
+    //输出：通过混音器进行pcm音频数据的输出
+
+    SLDataLocator_OutputMix outputMix = {
+            SL_DATALOCATOR_OUTPUTMIX,
+            outputMixObj
+    };
+    SLDataSink dataSink = {
+            &outputMix, NULL
+
+    };
+
+
+    const SLInterfaceID interfaceID[3] = {
+            SL_IID_BUFFERQUEUE,
+            SL_IID_VOLUME,
+            SL_IID_EFFECTSEND
+
+    };
+    const SLboolean req[3] = {
+            SL_BOOLEAN_TRUE,
+            SL_BOOLEAN_TRUE,
+            SL_BOOLEAN_TRUE
+    };
+
+
+
+    //3.创建播放器
+    result = (*engineEngine)->CreateAudioPlayer(
+            engineEngine,
+            &pcmPlayerObj,
+            &audioSrc,
+            &dataSink,
+            3,
+            interfaceID,
+            req
+    );
+
+
+
+    //3.1 实例化播放器接口
+    (*pcmPlayerObj)->Realize(pcmPlayerObj, SL_BOOLEAN_FALSE);
+
+    //3.2 获取播放器对象
+    (*pcmPlayerObj)->GetInterface(pcmPlayerObj, SL_IID_PLAY, &playItf);
+
+    //4.创建缓冲区
+    (*pcmPlayerObj)->GetInterface(pcmPlayerObj, SL_IID_ANDROIDSIMPLEBUFFERQUEUE,
+                                  &androidSimpleBufferQueueItf);
+
+    //4.1 缓冲区接口回调
+
+    /**
+     * RegisterCallback(SLAndroidSimpleBufferQueueItf self,slAndroidSimpleBufferQueueCallback callback,void* pContext);
+     *
+     * slAndroidSimpleBufferQueueCallback --- > 是一个回调函数
+     * 定义为 返回值是void 参数为SLAndroidSimpleBufferQueueItf 和 一个void*
+     * typedef void (SLAPIENTRY *slAndroidSimpleBufferQueueCallback)(
+            SLAndroidSimpleBufferQueueItf caller,
+            void *pContext);
+     */
+
+
+    (*androidSimpleBufferQueueItf)->RegisterCallback(androidSimpleBufferQueueItf, pcmPlayCallback,
+                                                     this);
+
+    //5.获取音量接口
+    (*pcmPlayerObj)->GetInterface(pcmPlayerObj, SL_IID_VOLUME, &volumeItf);
+    //TODO volumeItf 可以设置音量大小
+
+
+    //6.设置播放状态
+    (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
+
+
+    //7.主动调用一次回调函数开启pcm数据播放
+    pcmPlayCallback(androidSimpleBufferQueueItf, this);
+
+
 }
 
 
