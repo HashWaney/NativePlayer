@@ -17,7 +17,7 @@ SimpleAvCodec::SimpleAvCodec(AVPlayStatus *avPlayStatus, const char *_url,
     this->callJavaBridge = callJavaBridge;
     this->avPlayStatus = avPlayStatus;
     avPacketQueue = new AVPacketQueue(avPlayStatus);
-    out_buffer = (uint8_t *) av_malloc(SAMPLE_BUFFER_SIZE);
+
 }
 
 SimpleAvCodec::~SimpleAvCodec() {
@@ -86,9 +86,11 @@ void SimpleAvCodec::preparedDecode() {
         if (avFormatContext->streams[i] != NULL) {
             if (avFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
                 avCodecParameters = avFormatContext->streams[i]->codecpar;
+                sample_rate = avFormatContext->streams[i]->codecpar->sample_rate;
+                out_buffer = (uint8_t *) av_malloc(sample_rate * 2 * 2);
                 //角标记录是为了在进行解码的时候，从AVPacket包中匹配到type类型等于AUDIO音频流，解码也是为了通过读取AVPacket中的音频
                 streamIndex = i;
-                LOGD("类型为AUDIO的 角标为 %d:", streamIndex);
+                LOGD("类型为AUDIO的 角标为 %d:  当前数据帧的采样率：%d ", streamIndex, sample_rate);
 
             }
         }
@@ -123,6 +125,8 @@ void SimpleAvCodec::preparedDecode() {
 
 
 }
+
+
 
 
 /**
@@ -411,7 +415,7 @@ void SimpleAvCodec::initOpenSlEs() {
     SLDataFormat_PCM format_pcm = {
             SL_DATAFORMAT_PCM, //指定播放的是Pcm数据
             2,//声道数
-            SL_SAMPLINGRATE_44_1,//采样率
+            (SLuint32)(getSampleRateOfPerFrame(sample_rate)), //动态分配采样率 从每一帧数据中获取真实采样率
             SL_PCMSAMPLEFORMAT_FIXED_16,//位宽2个字节
             SL_PCMSAMPLEFORMAT_FIXED_16,//位宽2个字节
             SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,//立体声 （前左，前右）
@@ -505,6 +509,56 @@ void SimpleAvCodec::initOpenSlEs() {
     //7.主动调用一次回调函数开启pcm数据播放
     pcmPlayCallback(androidSimpleBufferQueueItf, this);
 
+
+}
+
+int SimpleAvCodec::getSampleRateOfPerFrame(int sample_rate) {
+    int rate = 0;
+    switch (sample_rate)
+    {
+        case 8000:
+            rate = SL_SAMPLINGRATE_8;
+            break;
+        case 11025:
+            rate = SL_SAMPLINGRATE_11_025;
+            break;
+        case 12000:
+            rate = SL_SAMPLINGRATE_12;
+            break;
+        case 16000:
+            rate = SL_SAMPLINGRATE_16;
+            break;
+        case 22050:
+            rate = SL_SAMPLINGRATE_22_05;
+            break;
+        case 24000:
+            rate = SL_SAMPLINGRATE_24;
+            break;
+        case 32000:
+            rate = SL_SAMPLINGRATE_32;
+            break;
+        case 44100:
+            rate = SL_SAMPLINGRATE_44_1;
+            break;
+        case 48000:
+            rate = SL_SAMPLINGRATE_48;
+            break;
+        case 64000:
+            rate = SL_SAMPLINGRATE_64;
+            break;
+        case 88200:
+            rate = SL_SAMPLINGRATE_88_2;
+            break;
+        case 96000:
+            rate = SL_SAMPLINGRATE_96;
+            break;
+        case 192000:
+            rate = SL_SAMPLINGRATE_192;
+            break;
+        default:
+            rate =  SL_SAMPLINGRATE_44_1;
+    }
+    return rate;
 
 }
 

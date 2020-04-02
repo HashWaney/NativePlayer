@@ -24,7 +24,7 @@ extern "C"
 #include "SLES/OpenSLES_Android.h"
 #include "SLES/OpenSLES.h"
 
-#define SAMPLE_BUFFER_SIZE (44100*2*2)
+
 
 class SimpleAvCodec {
 public:
@@ -68,6 +68,8 @@ public:
     //声音接口
     SLVolumeItf volumeItf;
 
+    int sample_rate;
+
 
 public:
     SimpleAvCodec(AVPlayStatus *avPlayStatus, const char *_url, CallJavaBridge *callJavaBridge);
@@ -87,6 +89,8 @@ public:
     void initOpenSlEs();
 
     void releaseResource();
+
+    int getSampleRateOfPerFrame(int sample_rate);
 };
 
 

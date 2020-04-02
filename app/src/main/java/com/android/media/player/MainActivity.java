@@ -13,8 +13,8 @@ import com.android.media.nativeplayerlib.TestJNI;
 
 public class MainActivity extends AppCompatActivity {
 
-//    private String url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
-    private String url= Environment.getExternalStorageDirectory().getAbsolutePath()+"/fyjili.mp3";
+    private String url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
+//    private String url= Environment.getExternalStorageDirectory().getAbsolutePath()+"/fyjili.mp3";
 
     private AudioPlayer audioPlayer = null;
 
