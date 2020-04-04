@@ -40,9 +40,6 @@ set_target_properties(avutil
         ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/libavutil.so)
 
 
-
-
-
 add_library(swresample SHARED IMPORTED)
 set_target_properties(swresample
         PROPERTIES IMPORTED_LOCATION

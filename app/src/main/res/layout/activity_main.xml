@@ -13,5 +13,17 @@
         android:onClick="prepared"
         android:layout_height="wrap_content" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:text="暂停"
+        android:onClick="paused"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:text="播放"
+        android:onClick="replay"
+        android:layout_height="wrap_content" />
+
 
 </LinearLayout>

@@ -9,7 +9,7 @@ pthread_t preparedThread;
 SwrContext *swrContext = NULL;
 
 
-FILE *pcmFile = fopen("/sdcard/music.pcm", "w");
+FILE *pcmFile = fopen("/sdcard/music11.m4u", "w");
 
 SimpleAvCodec::SimpleAvCodec(AVPlayStatus *avPlayStatus, const char *_url,
                              CallJavaBridge *callJavaBridge) {
@@ -127,13 +127,11 @@ void SimpleAvCodec::preparedDecode() {
 }
 
 
-
-
 /**
  * 进行解码操作
  */
 void SimpleAvCodec::startDecode() {
-    int count = 0;
+
     // TODO  此处需要进行队列缓存操作，现在采取的方式是先解码AVPacket数据包，
     //  比较耗时，因此将解码的数据放在队列中，然后后续播放操作直接从队列中读取
     playAudio();
@@ -143,13 +141,11 @@ void SimpleAvCodec::startDecode() {
 
         if (av_read_frame(avFormatContext, avPacket) == 0) { //读取成功
             if (avPacket->stream_index == streamIndex) {
-                count++;
-                LOGD("解码第 %d 帧, 角标为 %d", count, streamIndex);
+
                 //TODO  模拟入队操作
                 avPacketQueue->putAvPacket(avPacket);
             } else {
                 //释放内存 如果此处释放内存，会造成内存泄漏。
-//            该Packet有引用计数（packet->buf不为空）
                 releaseResource();
             }
 
@@ -197,11 +193,40 @@ void *decodePlay(void *data) {
  */
 int SimpleAvCodec::resample() {
 
-    //@TEST 将采样的读取的缓存数据写入到文件中。
 
     while (avPlayStatus != NULL && !avPlayStatus->exit) {
-        avPacket = av_packet_alloc();
+        //TODO 当前队列中是否有数据
+//        if (avPacketQueue->getAVPacketQueueSize() == 0) { //队列中没有数据，加载中
+//            if (!callJavaBridge->isLoading) {
+//                callJavaBridge->isLoading = true;
+//                callJavaBridge->loadStatus(true, CHILD_THREAD);
+//            }
+//
+//        } else {
+//            if (callJavaBridge->isLoading) {
+//                callJavaBridge->isLoading = false;
+//                callJavaBridge->loadStatus(false, CHILD_THREAD);
+//            }
+//            continue;
+//        }
+        if (avPacketQueue->getAVPacketQueueSize() == 0) {
+            LOGD("当前队列中数据为0 ");
+            isLoading = true;
+            if (callJavaBridge != NULL) {
+                callJavaBridge->callLoadStatus(isLoading, CHILD_THREAD);
+            }
 
+
+        } else {
+            LOGD("数据不为0")
+            isLoading = false;
+            if (callJavaBridge != NULL) {
+                callJavaBridge->callLoadStatus(isLoading, CHILD_THREAD);
+            }
+
+        }
+
+        avPacket = av_packet_alloc();
         if (avPacketQueue->getAvPacket(avPacket) != 0) { //从队列中获取失败
             //释放当前分配的Avpacket
             av_packet_free(&avPacket);
@@ -305,8 +330,8 @@ int SimpleAvCodec::resample() {
             int out_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
             int sample_format = av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
             data_size = sample_format * out_channels * sample_rate;
-            LOGD("size of %d -> out_channel %d -> sample_format %d-> all byte %d", sample_rate,
-                 out_channels, sample_format, data_size);
+//            LOGD("size of %d -> out_channel %d -> sample_format %d-> all byte %d", sample_rate,
+//                 out_channels, sample_format, data_size);
             fwrite(out_buffer, 1, data_size, pcmFile);
             releaseResource();
 
@@ -327,6 +352,7 @@ int SimpleAvCodec::resample() {
 
 
 void SimpleAvCodec::playAudio() {
+    LOGD("进入重采样了");
     pthread_create(&play_thread, NULL, decodePlay, this);
 
 
@@ -378,8 +404,7 @@ void SimpleAvCodec::initOpenSlEs() {
     (*engineObj)->Realize(engineObj, SL_BOOLEAN_FALSE);
     (*engineObj)->GetInterface(engineObj, SL_IID_ENGINE, &engineEngine);
 
-    //SL_IID_ENVIRONMENTALREVERB
-//    const SLInterfaceID ids[1] = {SL_IID_ENGINECAPABILITIES};
+
     const SLInterfaceID ids[1] = {SL_IID_ENVIRONMENTALREVERB};
     const SLboolean require[1]{SL_BOOLEAN_FALSE};
 
@@ -415,7 +440,7 @@ void SimpleAvCodec::initOpenSlEs() {
     SLDataFormat_PCM format_pcm = {
             SL_DATAFORMAT_PCM, //指定播放的是Pcm数据
             2,//声道数
-            (SLuint32)(getSampleRateOfPerFrame(sample_rate)), //动态分配采样率 从每一帧数据中获取真实采样率
+            (SLuint32) (getSampleRateOfPerFrame(sample_rate)), //动态分配采样率 从每一帧数据中获取真实采样率
             SL_PCMSAMPLEFORMAT_FIXED_16,//位宽2个字节
             SL_PCMSAMPLEFORMAT_FIXED_16,//位宽2个字节
             SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,//立体声 （前左，前右）
@@ -512,10 +537,10 @@ void SimpleAvCodec::initOpenSlEs() {
 
 }
 
+
 int SimpleAvCodec::getSampleRateOfPerFrame(int sample_rate) {
     int rate = 0;
-    switch (sample_rate)
-    {
+    switch (sample_rate) {
         case 8000:
             rate = SL_SAMPLINGRATE_8;
             break;
@@ -556,9 +581,27 @@ int SimpleAvCodec::getSampleRateOfPerFrame(int sample_rate) {
             rate = SL_SAMPLINGRATE_192;
             break;
         default:
-            rate =  SL_SAMPLINGRATE_44_1;
+            rate = SL_SAMPLINGRATE_44_1;
     }
     return rate;
+
+}
+
+//
+void SimpleAvCodec::pause() {
+    if (playItf != NULL) {
+        (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED);
+
+
+    }
+
+}
+
+void SimpleAvCodec::replay() {
+    if (playItf != NULL) {
+        (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
+    }
+
 
 }
 

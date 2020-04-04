@@ -50,7 +50,7 @@ Java_com_android_media_nativeplayerlib_AudioPlayer_prepared(JNIEnv *env, jobject
 
         }
         LOGD("avCodec init ")
-        avCodec = new SimpleAvCodec(avPlayStatus,url, callJavaBridge);
+        avCodec = new SimpleAvCodec(avPlayStatus, url, callJavaBridge);
         LOGD("avCodec prepared start")
         avCodec->prepared();
         LOGD("avCodec prepared end")
@@ -86,8 +86,28 @@ jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_android_media_nativeplayerlib_AudioPlayer_startDecode(JNIEnv *env, jobject instance) {
+    LOGD("startDecode");
     if (avCodec != NULL) {
         avCodec->startDecode();
     }
 
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_android_media_nativeplayerlib_AudioPlayer_pauseMusic(JNIEnv *env, jobject instance) {
+    if (avCodec != NULL) {
+        avCodec->pause();
+    }
+
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_android_media_nativeplayerlib_AudioPlayer_replayMusic(JNIEnv *env, jobject instance) {
+    if (avCodec != NULL) {
+        avCodec->replay();
+    }
 }

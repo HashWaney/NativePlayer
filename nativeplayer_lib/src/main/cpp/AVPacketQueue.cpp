@@ -25,7 +25,7 @@ AVPacketQueue::AVPacketQueue(AVPlayStatus *avPlayStatus) {
 void AVPacketQueue::putAvPacket(AVPacket *avPacket) {
     pthread_mutex_lock(&mutexPacket);
     avPacketQueue.push(avPacket);
-    LOGD("存入一个AvPacket 到队列中，个数为：%d", avPacketQueue.size());
+//    LOGD("存入一个AvPacket 到队列中，个数为：%d", avPacketQueue.size());
     pthread_cond_signal(&condPacket);
     pthread_mutex_unlock(&mutexPacket);
 
@@ -75,7 +75,7 @@ int AVPacketQueue::getAvPacket(AVPacket *packet) {
 //            av_packet_free(&avPacket);
 //            av_free(avPacket);
 //            avPacket = NULL;
-            LOGD("从队列里面取出一个AVpacket，还剩下 %d 个", avPacketQueue.size());
+//            LOGD("从队列里面取出一个AVpacket，还剩下 %d 个", avPacketQueue.size());
             break;
         } else {
             pthread_cond_wait(&condPacket, &mutexPacket);

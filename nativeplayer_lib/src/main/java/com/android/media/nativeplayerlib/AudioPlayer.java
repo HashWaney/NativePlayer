@@ -3,7 +3,7 @@ package com.android.media.nativeplayerlib;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.nio.file.Path;
+import com.android.media.nativeplayerlib.inter.ILoadingStatus;
 
 /**
  * 音频播放器
@@ -12,6 +12,8 @@ public class AudioPlayer {
 
 
     private ICallNativePrepared iCallNativePrepared;
+
+    private ILoadingStatus loadingStatus;
     private String url;
 
     static {
@@ -50,6 +52,10 @@ public class AudioPlayer {
 
     public native void startDecode();
 
+    public native void pauseMusic();
+
+    public native void replayMusic();
+
 
     //C++ 调用
 
@@ -59,13 +65,18 @@ public class AudioPlayer {
         }
     }
 
+    //当前是否在加载中
+    public void loadingStatus(boolean isLoadding) {
+        if (loadingStatus != null) {
+            loadingStatus.play(isLoadding);
+        }
+    }
 
-    public void prepared()
-    {
-        Log.i("HASH","判断URL是否为null："+TextUtils.isEmpty(url));
-        if (TextUtils.isEmpty(url))
-        {
-            Log.i("HASH","url 为空 不进行解码操作");
+
+    public void prepared() {
+        Log.i("HASH", "判断URL是否为null：" + TextUtils.isEmpty(url));
+        if (TextUtils.isEmpty(url)) {
+            Log.i("HASH", "url 为空 不进行解码操作");
             return;
         }
 
@@ -76,8 +87,8 @@ public class AudioPlayer {
             }
         }).start();
     }
-    public void start()
-    {
+
+    public void start() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -93,6 +104,12 @@ public class AudioPlayer {
 
     public void setICallNativePrepared(ICallNativePrepared iCallNativePrepared) {
         this.iCallNativePrepared = iCallNativePrepared;
+    }
+
+
+    public void setLoadingStatus(ILoadingStatus status) {
+        this.loadingStatus = status;
+
     }
 
 

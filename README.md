@@ -177,6 +177,8 @@ A native player  for audio  play
        本地资源： /sdcard/temp.pcm 不能播放  -1094995529(Invalid data found when processing input)
                 /sdcard/aaa.mp3  正常播放
 
+               -  猜想原因是pcm的数据不能识别或者还是其他原因
+
 
 
 

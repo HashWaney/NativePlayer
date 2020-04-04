@@ -25,7 +25,6 @@ extern "C"
 #include "SLES/OpenSLES.h"
 
 
-
 class SimpleAvCodec {
 public:
     const char *_url;
@@ -70,6 +69,8 @@ public:
 
     int sample_rate;
 
+    bool isLoading = false;
+
 
 public:
     SimpleAvCodec(AVPlayStatus *avPlayStatus, const char *_url, CallJavaBridge *callJavaBridge);
@@ -91,6 +92,10 @@ public:
     void releaseResource();
 
     int getSampleRateOfPerFrame(int sample_rate);
+
+    void pause();
+
+    void replay();
 };
 
 

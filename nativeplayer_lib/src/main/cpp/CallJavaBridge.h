@@ -7,14 +7,17 @@
 
 #include "jni.h"
 #include "AndroidLog.h"
+
 #define MAIN_THREAD  0
 #define CHILD_THREAD 1
+
 class CallJavaBridge {
 public:
     _JavaVM *javaVM = NULL;
     JNIEnv *env = NULL;
     jobject jobj;
-    jmethodID jmethodId;
+    jmethodID jmethoid_onprepare;
+    jmethodID jmethod_playstatus;
 
 
 public:
@@ -24,6 +27,10 @@ public:
 
     //C++完成解码操作，将结果通知Java层调用者
     void callPrepared(int type);
+
+//    void loadStatus(bool isPlay, int type);
+    void callLoadStatus(bool isLoading, int type);
+
 
 };
 
