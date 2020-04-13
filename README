@@ -1,0 +1,8 @@
+## 通过FFMPEG 实现音频文件的播放  ，变调，变速。
+
+-4.13 基本ui搭建，实现开始，播放，暂停，停止。
+
+      引入ffmpeg库，avcodec 解码库
+                   avformat todo
+                   avutil todo
+                   avswscale todo 缩放
