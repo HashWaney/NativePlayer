@@ -6,3 +6,6 @@
                    avformat todo
                    avutil todo
                    avswscale todo 缩放
+
+-4.13 引入FFMPEG so 库 和 头文件
+
