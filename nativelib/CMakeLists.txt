@@ -47,12 +47,19 @@ set_target_properties(swscale
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/libswscale.so)
 
- add_library(
+add_library(
         native-lib
 
         SHARED
 
-        src/main/cpp/native-lib.cpp)
+        src/main/cpp/native-lib.cpp
+        src/main/cpp/ffmpeg/FFmpegController.cpp
+        src/main/cpp/audio/AudioController.cpp
+        src/main/cpp/queue/BufferQueue.cpp
+        src/main/cpp/status/PlayStatus.cpp
+        src/main/cpp/javabridge/JavaBridge.cpp
+
+)
 
 target_link_libraries(
 

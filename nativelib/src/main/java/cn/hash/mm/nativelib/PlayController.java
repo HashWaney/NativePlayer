@@ -1,6 +1,8 @@
 package cn.hash.mm.nativelib;
 
 import android.os.SystemClock;
+import android.text.TextUtils;
+import android.util.Log;
 
 /**
  * Created by Hash on 2020-04-13.
@@ -8,6 +10,8 @@ import android.os.SystemClock;
 
 
 public class PlayController {
+
+    private static final String TAG = PlayController.class.toString();
 
     static {
         System.loadLibrary("native-lib");
@@ -41,6 +45,19 @@ public class PlayController {
     //1.准备阶段
 
     public void prepare() {
+        if (TextUtils.isEmpty(resource)) {
+            Log.d(TAG, String.format("url %d is null", resource));
+            return;
+        }
+
+        //开启一个子线程
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                n_prepare(resource);
+            }
+        }).start();
+
 
     }
 
@@ -64,6 +81,14 @@ public class PlayController {
     public void stopPlay() {
 
     }
+
+
+    /////////////////////////native///////////////////////////////////
+
+
+    public native void n_prepare(String resource);
+
+
 
 
 }
