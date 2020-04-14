@@ -24,9 +24,9 @@ class FFmpegController {
 public:
     const char *url = NULL;
     pthread_t prepareThread;
-    AVFormatContext *avFormatContext=NULL;
+    AVFormatContext *avFormatContext = NULL;
 
-    AudioController *audioController=NULL;
+    AudioController *audioController = NULL;
 
 public:
     FFmpegController();
@@ -36,6 +36,8 @@ public:
     void prepare(const char *url);
 
     void prepareTask();
+
+    void startPlay();
 
 
 };

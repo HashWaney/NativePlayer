@@ -25,6 +25,8 @@ public:
 
     ~AudioController();
 
+    void playMusic();
+
 };
 
 

@@ -12,3 +12,7 @@ AudioController::AudioController(int sample_rate) {
 AudioController::~AudioController() {
 
 }
+
+void AudioController::playMusic() {
+
+}

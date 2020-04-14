@@ -28,3 +28,13 @@ Java_cn_hash_mm_nativelib_PlayController_n_1prepare(JNIEnv *env, jobject instanc
     }
     fFmpegController->prepare(url);
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1startPlay(JNIEnv *env, jobject instance) {
+
+    if (fFmpegController != NULL) {
+        fFmpegController->startPlay();
+    }
+
+}

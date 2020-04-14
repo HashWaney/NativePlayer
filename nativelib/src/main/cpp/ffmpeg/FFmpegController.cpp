@@ -101,3 +101,15 @@ void FFmpegController::prepareTask() {
     }
 
 }
+
+void FFmpegController::startPlay() {
+    if (audioController == NULL) {
+        LOG_E("audioController is null");
+        return;
+    }
+    //TODO 执行播放操作，此时可能没有数据，但是不妨碍。只要将数据解析到缓存中，audioController可以从队列中取数据，
+    audioController->playMusic();
+
+
+
+}

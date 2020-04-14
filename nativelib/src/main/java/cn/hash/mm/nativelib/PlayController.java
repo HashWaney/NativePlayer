@@ -4,6 +4,8 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 
+import cn.hash.mm.nativelib.listener.OnPrepareListener;
+
 /**
  * Created by Hash on 2020-04-13.
  */
@@ -12,6 +14,8 @@ import android.util.Log;
 public class PlayController {
 
     private static final String TAG = PlayController.class.toString();
+
+    private OnPrepareListener onPrepareListener;
 
     static {
         System.loadLibrary("native-lib");
@@ -34,6 +38,10 @@ public class PlayController {
 
     public void setResource(String resource) {
         this.resource = resource;
+    }
+
+    public void setOnPrepareListener(OnPrepareListener prepareListener) {
+        this.onPrepareListener = prepareListener;
     }
 
 
@@ -63,6 +71,15 @@ public class PlayController {
 
     //2.开始播放
     public void startPlay() {
+        if (TextUtils.isEmpty(resource)) {
+            return;
+        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                n_startPlay();
+            }
+        }).start();
 
     }
 
@@ -82,13 +99,20 @@ public class PlayController {
 
     }
 
+    ///////////////////native callback////////////////////////////////////
+    public void prepareCallBackFormNative() {
+        if (onPrepareListener != null) {
+            onPrepareListener.prepare();
+        }
+    }
+
 
     /////////////////////////native///////////////////////////////////
 
 
     public native void n_prepare(String resource);
 
-
+    public native void n_startPlay();
 
 
 }
