@@ -12,6 +12,8 @@
 #include "pthread.h"
 #include "../log/AudioLog.h"
 #include "../audio/AudioController.h"
+#include "../javabridge/JavaBridge.h"
+#include "../status/PlayStatus.h"
 
 extern "C"
 {
@@ -28,8 +30,16 @@ public:
 
     AudioController *audioController = NULL;
 
+
+    ///////JavaBridge////////
+    JavaBridge *javaBridge = NULL;
+
+    ////playStatus////////
+    PlayStatus *playStatus = NULL;
+
+
 public:
-    FFmpegController();
+    FFmpegController(JavaBridge *javaBridge);
 
     ~FFmpegController();
 

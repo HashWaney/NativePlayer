@@ -15,12 +15,15 @@ void *prepareCallBack(void *data) {
 }
 
 
-FFmpegController::FFmpegController() {
+FFmpegController::FFmpegController(JavaBridge *javaBridge) {
+    this->javaBridge = javaBridge;
+    playStatus = new PlayStatus();
+
 
 }
 
 FFmpegController::~FFmpegController() {
-
+    delete playStatus;
 }
 
 
@@ -110,6 +113,14 @@ void FFmpegController::startPlay() {
     //TODO 执行播放操作，此时可能没有数据，但是不妨碍。只要将数据解析到缓存中，audioController可以从队列中取数据，
     audioController->playMusic();
 
+    while (playStatus != NULL && !playStatus->exit) {
+        AVPacket *avPacket = av_packet_alloc();
+        if (av_read_frame(avFormatContext, avPacket)) {
+
+        }
+
+
+    }
 
 
 }

@@ -4,3 +4,11 @@
 
 
 #include "PlayStatus.h"
+
+PlayStatus::PlayStatus() {
+
+}
+
+PlayStatus::~PlayStatus() {
+
+}

@@ -9,6 +9,13 @@
 
 class PlayStatus {
 
+public:
+    bool exit = false;
+public:
+    PlayStatus();
+
+    ~PlayStatus();
+
 };
 
 
