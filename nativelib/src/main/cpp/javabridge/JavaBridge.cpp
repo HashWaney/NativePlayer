@@ -18,6 +18,8 @@ JavaBridge::JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj) {
     }
     method_prepared = env->GetMethodID(java_clazz, "prepareCallBackFormNative", "()V");
     method_timeInfo = env->GetMethodID(java_clazz, "callTimeInfoFromNative", "(II)V");
+    method_errorMessage = env->GetMethodID(java_clazz, "errMessageFromNative",
+                                           "(ILjava/lang/String;)V");
 
 }
 
@@ -55,6 +57,26 @@ void JavaBridge::onCallTimeInfo(int type, int currentTime, int totalTime) {
             return;
         }
         jniEnv->CallVoidMethod(instance, method_timeInfo, currentTime, totalTime);
+        vm->DetachCurrentThread();
+
+    }
+
+}
+
+void JavaBridge::onCallErrMessage(int type, int errCode, char *errMessage) {
+    if (type == MAIN_THREAD) {
+        jstring message = env->NewStringUTF(errMessage);
+        env->CallVoidMethod(instance, method_errorMessage, errCode, message);
+        env->DeleteLocalRef(message);
+
+    } else {
+        JNIEnv *jniEnv;
+        if (vm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+            return;
+        }
+        jstring message = jniEnv->NewStringUTF(errMessage);
+        jniEnv->CallVoidMethod(instance, method_errorMessage, errCode, message);
+        jniEnv->DeleteLocalRef(message);
         vm->DetachCurrentThread();
 
     }

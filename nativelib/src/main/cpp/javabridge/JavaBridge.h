@@ -24,7 +24,7 @@ public:
     _JavaVM *vm = NULL;
     JNIEnv *env = NULL;
     jobject instance;
-    jmethodID method_prepared, method_timeInfo;
+    jmethodID method_prepared, method_timeInfo, method_errorMessage;
 public:
     JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj);
 
@@ -35,6 +35,7 @@ public:
 
     void onCallTimeInfo(int type, int currentTime, int totalTime);
 
+    void onCallErrMessage(int type, int errCode, char *errMessage);
 };
 
 

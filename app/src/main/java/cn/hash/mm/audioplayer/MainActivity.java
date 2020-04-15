@@ -19,6 +19,7 @@ import cn.hash.mm.audioplayer.util.PermissionUtil;
 import cn.hash.mm.nativelib.PlayController;
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
+import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
 import cn.hash.mm.nativelib.listener.OnPrepareLoadListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
@@ -29,7 +30,7 @@ import cn.hash.mm.nativelib.util.TimeUtil;
  */
 
 
-public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnPrepareLoadListener, OnTimeInfoListener {
+public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnPrepareLoadListener, OnTimeInfoListener, OnPlayErrorListener {
 
     private PlayController playController;
     private boolean isPrepared = false;
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         playController.setOnPauseResumeListener(this);
         playController.setOnPrepareLoadListener(this);
         playController.setTimeInfoListener(this);
+        playController.setOnPlayErrorListener(this);
     }
 
     @Override
@@ -72,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     public void stop(View view) {
-        isPrepared=false;
+        isPrepared = false;
         playController.stopPlay();
     }
 
@@ -121,5 +123,10 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         message.what = 1;
         message.obj = audioInfoBean;
         timeInfoHandler.sendMessage(message);
+    }
+
+    @Override
+    public void onError(int errorCode, String errorMessage) {
+        LogUtil.logFormat(errorMessage + "/ code :" + errorCode);
     }
 }

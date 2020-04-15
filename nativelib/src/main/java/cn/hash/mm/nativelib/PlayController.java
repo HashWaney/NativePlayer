@@ -8,6 +8,7 @@ import androidx.core.app.NavUtils;
 
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
+import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
 import cn.hash.mm.nativelib.listener.OnPrepareLoadListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
@@ -28,6 +29,8 @@ public class PlayController {
     private OnPrepareLoadListener onPrepareLoadListener;
 
     private OnTimeInfoListener timeInfoListener;
+
+    private OnPlayErrorListener onPlayErrorListener;
 
     static {
         System.loadLibrary("native-lib");
@@ -68,6 +71,10 @@ public class PlayController {
 
     public void setTimeInfoListener(OnTimeInfoListener timeInfoListener) {
         this.timeInfoListener = timeInfoListener;
+    }
+
+    public void setOnPlayErrorListener(OnPlayErrorListener errorListener) {
+        this.onPlayErrorListener = errorListener;
     }
 
     public PlayController() {
@@ -161,6 +168,13 @@ public class PlayController {
             audioInfoBean.setCurrentTime(currentTime);
             audioInfoBean.setTotalTime(totalTime);
             timeInfoListener.getCurrentTimeInfo(audioInfoBean);
+        }
+    }
+
+
+    public void errMessageFromNative(int errorCode, String errorMessage) {
+        if (onPlayErrorListener != null) {
+            onPlayErrorListener.onError(errorCode, errorMessage);
         }
     }
 

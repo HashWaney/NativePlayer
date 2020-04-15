@@ -72,6 +72,9 @@ void FFmpegController::prepareTask() {
     int errorCode = avformat_open_input(&avFormatContext, url, NULL, NULL);
     char buffer[1024] = {0};
     if (errorCode != 0) {
+        if (javaBridge != NULL) {
+            javaBridge->onCallErrMessage(TASK_THREAD, 1001, "can not open error url");
+        }
         LOG_E("can not open error url: %s", url);
         av_strerror(errorCode, buffer, sizeof(buffer));
         LOG_D("error message: %s \n error code :%d", buffer, errorCode);
@@ -85,6 +88,9 @@ void FFmpegController::prepareTask() {
     //5.判断读取的媒体信息是否包含流信息
     if (avformat_find_stream_info(avFormatContext, NULL)) {
         LOG_E("can not find streams from %s", url);
+        if (javaBridge != NULL) {
+            javaBridge->onCallErrMessage(TASK_THREAD, 1002, "can not find streams from url");;
+        }
         isDecodeTerminate = true;
         pthread_mutex_unlock(&decode_lock);
         return;
@@ -120,6 +126,9 @@ void FFmpegController::prepareTask() {
 
     if (!avCodec) {
         LOG_E("error to find codec");
+        if (javaBridge != NULL) {
+            javaBridge->onCallErrMessage(TASK_THREAD, 1003, "error to find codec");
+        }
         isDecodeTerminate = true;
         pthread_mutex_unlock(&decode_lock);
         return;
@@ -134,6 +143,10 @@ void FFmpegController::prepareTask() {
     if (avcodec_parameters_to_context(audioController->avCodecContext,
                                       audioController->avCodecParameters) < 0) {
         LOG_E("error to fill avcodec param to avcodec context");
+        if (javaBridge != NULL) {
+            javaBridge->onCallErrMessage(TASK_THREAD, 1004,
+                                         "error to fill avcodec param to avcodec context");
+        }
         isDecodeTerminate = true;
         pthread_mutex_unlock(&decode_lock);
         return;
@@ -143,6 +156,10 @@ void FFmpegController::prepareTask() {
     //10.用avCodec 实例化AVCodeContext
     if (avcodec_open2(audioController->avCodecContext, avCodec, 0) != 0) {
         LOG_E("error open audio stream");
+        if (javaBridge != NULL) {
+            javaBridge->onCallErrMessage(TASK_THREAD, 1005,
+                                         "error to init avCodecContext by avCodec");
+        }
         isDecodeTerminate = true;
         pthread_mutex_unlock(&decode_lock);
         return;
