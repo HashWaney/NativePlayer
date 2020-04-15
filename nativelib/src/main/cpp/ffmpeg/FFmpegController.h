@@ -41,9 +41,14 @@ public:
     ////playStatus////////
     PlayStatus *playStatus = NULL;
 
+    //total time
+    int duration = 0;
 
     //release lock
     pthread_mutex_t decode_lock;
+
+    //lock seek
+    pthread_mutex_t seek_lock;
 
 
 public:
@@ -62,6 +67,8 @@ public:
     void resumePlay();
 
     void release();
+
+    void seek(uint64_t second);
 
 
 };

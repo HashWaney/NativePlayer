@@ -35,20 +35,35 @@
 
         <Button
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="停止"
             android:onClick="stop"
-            android:layout_height="wrap_content" />
+            android:text="停止" />
 
 
     </LinearLayout>
+
     <TextView
+        android:id="@+id/tvPlayTime"
         android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
         android:text="00:00/00:00"
-        android:textSize="15sp"
-        android:id="@+id/tvPlayTime"
+        android:textSize="15sp" />
+    <Button
+        android:layout_width="wrap_content"
+        android:onClick="seek"
+        android:textSize="14sp"
+        android:text="定位"
         android:layout_height="wrap_content" />
+
+    <androidx.appcompat.widget.AppCompatSeekBar
+        android:id="@+id/seek"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:progress="@color/colorAccent"
+        android:progressBackgroundTint="@color/colorPrimary" />
 
 </LinearLayout>

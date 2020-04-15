@@ -148,6 +148,10 @@ public class PlayController {
 
     }
 
+    //6.进度
+    public void seek(int second) {
+        n_seek(second);
+    }
 
     ///////////////////native callback////////////////////////////////////
     public void prepareCallBackFormNative() {
@@ -189,6 +193,8 @@ public class PlayController {
     public native void n_resume();
 
     public native void n_stop();
+
+    public native void n_seek(int seconds);
 
 
 }

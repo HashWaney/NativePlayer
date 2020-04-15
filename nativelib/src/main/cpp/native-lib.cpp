@@ -88,4 +88,12 @@ Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance) 
 
     }
 
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1seek(JNIEnv *env, jobject instance, jint seconds) {
+
+    if (fFmpegController != NULL) {
+        fFmpegController->seek(seconds);
+    }
+
 }

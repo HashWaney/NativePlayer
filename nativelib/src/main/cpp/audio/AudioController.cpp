@@ -183,6 +183,16 @@ SLuint32 AudioController::getCurrentSampleRate(int sample_rate) {
 
 int AudioController::resampleAudio() {
     while (playStatus != NULL && !playStatus->exit) {
+
+        //use the seek flag to declare i am not effect the process
+        if (playStatus->seekByUser) {
+            continue;
+        }
+        if (bufferQueue->getQueueSize() == 0) { //加载中
+            continue;
+
+        }
+
         avPacket = av_packet_alloc();
         if (bufferQueue->getPacketFromQueue(avPacket) != 0) {
             LOG_E("get packet from queue error ,maybe the queue is empty ")

@@ -6,11 +6,13 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatSeekBar;
 
 import java.io.File;
 
@@ -30,11 +32,13 @@ import cn.hash.mm.nativelib.util.TimeUtil;
  */
 
 
-public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnPrepareLoadListener, OnTimeInfoListener, OnPlayErrorListener {
+public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnPrepareLoadListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener {
 
     private PlayController playController;
     private boolean isPrepared = false;
     private TextView tvPlayTime;
+
+    private AppCompatSeekBar seekBar;
 
     private Handler timeInfoHandler = new Handler() {
         @Override
@@ -60,11 +64,13 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         setContentView(R.layout.activity_main);
         PermissionUtil.requestPermission(this);
         tvPlayTime = findViewById(R.id.tvPlayTime);
+        seekBar = findViewById(R.id.seek);
         playController = new PlayController();
         playController.setOnPauseResumeListener(this);
         playController.setOnPrepareLoadListener(this);
         playController.setTimeInfoListener(this);
         playController.setOnPlayErrorListener(this);
+        seekBar.setOnSeekBarChangeListener(this);
     }
 
     @Override
@@ -128,5 +134,26 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     @Override
     public void onError(int errorCode, String errorMessage) {
         LogUtil.logFormat(errorMessage + "/ code :" + errorCode);
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        LogUtil.logD("progress:" + progress);
+
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        LogUtil.logD("start touch");
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        LogUtil.logD("stop touch");
+
+    }
+
+    public void seek(View view) {
+        playController.seek(111);
     }
 }

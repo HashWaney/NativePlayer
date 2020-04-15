@@ -10,6 +10,7 @@ FFmpegController::FFmpegController(JavaBridge *javaBridge) {
     this->javaBridge = javaBridge;
     playStatus = new PlayStatus();
     pthread_mutex_init(&decode_lock, NULL);
+    pthread_mutex_init(&seek_lock, NULL);
 
 
 }
@@ -20,6 +21,7 @@ FFmpegController::~FFmpegController() {
 
     }
     pthread_mutex_destroy(&decode_lock);
+    pthread_mutex_destroy((&seek_lock));
 
 
 }
@@ -113,6 +115,8 @@ void FFmpegController::prepareTask() {
 
                     //4.15 获取总时长  转换为秒
                     audioController->duration = avFormatContext->duration / AV_TIME_BASE;
+                    duration = audioController->duration;
+
 
                 }
             }
@@ -187,6 +191,16 @@ void FFmpegController::startPlay() {
     int decodeCount = 0;
 
     while (playStatus != NULL && !playStatus->exit) {
+
+        if (playStatus->seekByUser) {
+            continue;
+        }
+
+        //TODO seek 保证队列中有值
+        if (audioController->bufferQueue->getQueueSize() > 40) {
+            continue;
+        }
+
         AVPacket *avPacket = av_packet_alloc();
         //TODO 解码过程就是从AvFrameContext中获取被压缩的数据包AVPacket，因此可以把这些数据包存入到队列中，完成边解码边播放的功能
         if (av_read_frame(avFormatContext, avPacket) == 0) {
@@ -280,5 +294,42 @@ void FFmpegController::release() {
     }
 
     pthread_mutex_unlock(&decode_lock);
+
+}
+
+void FFmpegController::seek(uint64_t second) {
+    if (duration <= 0) {
+        return;
+    }
+    //valid seek and continue the resample not  effect the process
+    if (second > 0 && second <= duration) {
+        if (audioController != NULL) {
+            //flag start
+            playStatus->seekByUser = true;
+
+            //clear the buffer
+            audioController->bufferQueue->clearQueue();
+            //reset time
+            audioController->clock = 0;
+            audioController->last_time = 0;
+            //lock
+            pthread_mutex_lock(&seek_lock);
+            //seek the file
+            int64_t realtime = second * AV_TIME_BASE;
+            int seek_result = avformat_seek_file(avFormatContext, -1,
+                                                 INT64_MIN, realtime, INT64_MAX, 0);
+            LOG_E("seek_result %d：", seek_result);
+            if (seek_result < 0) {
+                audioController->javaBridge->onCallErrMessage(TASK_THREAD, 1006,
+                                                              "error to seek the file");
+            }
+            //unlock
+            pthread_mutex_unlock(&seek_lock);
+
+            //flag end
+            playStatus->seekByUser = false;
+        }
+
+    }
 
 }

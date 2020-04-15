@@ -26,7 +26,7 @@ public:
 
 
 public:
-    BufferQueue(PlayStatus* playStatus);
+    BufferQueue(PlayStatus *playStatus);
 
     ~BufferQueue();
 
@@ -36,6 +36,8 @@ public:
 
     int getQueueSize();
 
+    //clear queue
+    void clearQueue();
 
 };
 

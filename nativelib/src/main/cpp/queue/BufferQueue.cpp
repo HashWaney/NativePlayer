@@ -69,3 +69,20 @@ int BufferQueue::getQueueSize() {
     pthread_mutex_unlock(&mutexPacket);
     return size;
 }
+
+void BufferQueue::clearQueue() {
+    pthread_cond_signal(&condPacket);
+    pthread_mutex_lock(&mutexPacket);
+    while (!queuePacket.empty()) {
+        AVPacket *avPacket = queuePacket.front();
+        //pop
+        queuePacket.pop();
+        //free avPacket
+        av_packet_free(&avPacket);
+        av_free(avPacket);
+        avPacket = NULL;
+
+    }
+    pthread_mutex_unlock(&mutexPacket);
+
+}

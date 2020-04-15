@@ -11,6 +11,7 @@ class PlayStatus {
 
 public:
     bool exit = false;
+    bool seekByUser = false;
 public:
     PlayStatus();
 
