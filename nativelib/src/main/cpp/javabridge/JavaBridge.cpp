@@ -17,12 +17,14 @@ JavaBridge::JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj) {
         return;
     }
     method_prepared = env->GetMethodID(java_clazz, "prepareCallBackFormNative", "()V");
+    method_timeInfo = env->GetMethodID(java_clazz, "callTimeInfoFromNative", "(II)V");
 
 }
 
 JavaBridge::~JavaBridge() {
 
 }
+
 
 //1: after decode the stream ,then to tell the user now can to play
 void JavaBridge::onCallPrepared(int type) {
@@ -41,3 +43,22 @@ void JavaBridge::onCallPrepared(int type) {
 
     }
 }
+
+void JavaBridge::onCallTimeInfo(int type, int currentTime, int totalTime) {
+    if (type == MAIN_THREAD) {
+
+        env->CallVoidMethod(instance, method_timeInfo, currentTime, totalTime);
+    } else {
+        JNIEnv *jniEnv;
+        if (vm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+            LOG_E("call time info error");
+            return;
+        }
+        jniEnv->CallVoidMethod(instance, method_timeInfo, currentTime, totalTime);
+        vm->DetachCurrentThread();
+
+    }
+
+}
+
+

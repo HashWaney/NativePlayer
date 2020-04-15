@@ -53,4 +53,22 @@ Java_cn_hash_mm_nativelib_PlayController_n_1startPlay(JNIEnv *env, jobject insta
         fFmpegController->startPlay();
     }
 
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1pause(JNIEnv *env, jobject instance) {
+    LOG_D("pause play");
+
+    if (fFmpegController != NULL) {
+        fFmpegController->pausePlay();
+    }
+
+
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1resume(JNIEnv *env, jobject instance) {
+    LOG_D("resume play");
+    if (fFmpegController != NULL) {
+        fFmpegController->resumePlay();
+    }
+
 }

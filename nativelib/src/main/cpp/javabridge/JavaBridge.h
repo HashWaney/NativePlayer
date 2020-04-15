@@ -24,13 +24,16 @@ public:
     _JavaVM *vm = NULL;
     JNIEnv *env = NULL;
     jobject instance;
-    jmethodID method_prepared;
+    jmethodID method_prepared, method_timeInfo;
 public:
     JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj);
 
     ~JavaBridge();
 
+
     void onCallPrepared(int type);
+
+    void onCallTimeInfo(int type, int currentTime, int totalTime);
 
 };
 

@@ -59,11 +59,11 @@ void FFmpegController::prepareTask() {
 
     //4.打开url地址 读取url信息 &avFormatContext 这个是引用  也就是指向指针的指针
     int errorCode = avformat_open_input(&avFormatContext, url, NULL, NULL);
-    char buffer[1024]={0};
+    char buffer[1024] = {0};
     if (errorCode != 0) {
         LOG_E("can not open error url: %s", url);
         av_strerror(errorCode, buffer, sizeof(buffer));
-        LOG_D("error message: %s \n error code :%d",buffer,errorCode);
+        LOG_D("error message: %s \n error code :%d", buffer, errorCode);
         return;
     }
 
@@ -84,11 +84,14 @@ void FFmpegController::prepareTask() {
             if (avFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
                 //将读取的到音频相关数据都存放到AudioController中
                 if (audioController == NULL) {
-                    audioController = new AudioController(playStatus,
+                    audioController = new AudioController(javaBridge, playStatus,
                                                           avFormatContext->streams[i]->codecpar->sample_rate);
                     audioController->streamIndex = i;
                     audioController->avCodecParameters = avFormatContext->streams[i]->codecpar;
                     audioController->timeBase = avFormatContext->streams[i]->time_base;
+
+                    //4.15 获取总时长  转换为秒
+                    audioController->duration = avFormatContext->duration / AV_TIME_BASE;
 
                 }
             }
@@ -179,4 +182,18 @@ void FFmpegController::startPlay() {
     LOG_D("完成解码");
 
 
+}
+
+void FFmpegController::pausePlay() {
+    if (audioController != NULL) {
+        audioController->pause();
+    }
+
+}
+
+void FFmpegController::resumePlay() {
+
+    if (audioController != NULL) {
+        audioController->resume();
+    }
 }

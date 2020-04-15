@@ -5,8 +5,10 @@
 
 #include "AudioController.h"
 
-AudioController::AudioController(PlayStatus *playStatus, int sample_rate) {
+AudioController::AudioController(JavaBridge *javaBridge, PlayStatus *playStatus, int sample_rate) {
     this->playStatus = playStatus;
+    this->javaBridge = javaBridge;
+    this->sample_rate = sample_rate;
     bufferQueue = new BufferQueue(playStatus);
     //TODO 为buffer 分配内存空间，按照采样率*声道数*位宽 的形式
     receiveDataFromFrameBuffer = (uint8_t *) av_malloc(sample_rate * 2 * 2);
@@ -34,6 +36,19 @@ void pcmPlayBufferQueueCallBack(SLAndroidSimpleBufferQueueItf bf, void *data) {
     if (audioController != NULL) {
         int bufferSize = audioController->resampleAudio();
         if (bufferSize > 0) {
+
+            // 计算时间
+            audioController->clock +=
+                    bufferSize / ((double) (audioController->sample_rate * 2 * 2));
+
+            if (audioController->clock - audioController->last_time >= 0.1) {
+                audioController->last_time = audioController->clock;
+                //回调给Java层时间
+                audioController->javaBridge->onCallTimeInfo(TASK_THREAD, audioController->clock,
+                                                            audioController->duration);
+            }
+
+
             (*audioController->androidSimpleBufferQueueItf)->Enqueue(
                     audioController->androidSimpleBufferQueueItf,
                     (char *) audioController->receiveDataFromFrameBuffer, bufferSize);
@@ -235,6 +250,11 @@ int AudioController::resampleAudio() {
             //采样率*声道数*位宽
             data_size = convert_data * out_channels * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
 
+            now_time = avFrame->pts * av_q2d(timeBase);
+            if (now_time < clock) {
+                now_time = clock;
+            }
+            clock = now_time;
             //this all and free the var
             av_packet_free(&avPacket);
             av_free(avPacket);
@@ -257,4 +277,17 @@ int AudioController::resampleAudio() {
 
 
     return data_size;
+}
+
+void AudioController::pause() {
+    if (playItf != NULL) {
+        (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED);
+    }
+
+}
+
+void AudioController::resume() {
+    if (playItf != NULL) {
+        (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
+    }
 }

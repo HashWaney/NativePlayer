@@ -49,6 +49,10 @@ public:
 
     void startPlay();
 
+    void pausePlay();
+
+    void resumePlay();
+
 
 };
 

@@ -15,6 +15,7 @@ extern "C"
 
 #include "../queue/BufferQueue.h"
 #include "../status/PlayStatus.h"
+#include "../javabridge/JavaBridge.h"
 
 
 class AudioController {
@@ -22,9 +23,7 @@ public:
     int streamIndex = -1; //遍历数据流的为音频流的角标
     AVCodecContext *avCodecContext = NULL; //解码器上下文
     AVCodecParameters *avCodecParameters = NULL;//解码器参数
-    int sample_rate = 0;//采样率
-
-    AVRational timeBase;
+    JavaBridge *javaBridge = NULL;
 
     ////////////play thread///////////////
     pthread_t playThread;
@@ -59,8 +58,17 @@ public:
     int data_size = 0;
 
 
+    //////////////////time/////////////////////////////
+    int duration = 0;
+    AVRational timeBase;
+    int sample_rate = 0;//采样率
+    double clock; //播放的时长
+    double now_time;//当前调用时间
+    double last_time; //上一次调用时间
+
+
 public:
-    AudioController(PlayStatus *playStatus, int sample_rate);
+    AudioController(JavaBridge *javaBridge, PlayStatus *playStatus, int sample_rate);
 
     ~AudioController();
 
@@ -71,6 +79,11 @@ public:
     SLuint32 getCurrentSampleRate(int sample_rate);
 
     int resampleAudio();
+
+
+    void pause();
+
+    void resume();
 
 };
 

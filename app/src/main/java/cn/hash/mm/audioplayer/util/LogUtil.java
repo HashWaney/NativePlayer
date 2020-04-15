@@ -28,4 +28,8 @@ public class LogUtil {
         Log.i(TAG, msg);
 
     }
+
+    public static void logFormat(String msg) {
+        Log.d(TAG, String.format("%s", msg));
+    }
 }
