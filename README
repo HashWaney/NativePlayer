@@ -17,3 +17,12 @@
       现在当前的播放状态PlayStatus.cpp
 
 -4.15 队列代码初步完善
+
+
+    ```
+         注意AVFormatContext中包含了多个流信息，每个流信息在AVMediaType中去匹配，比如音频AUDIO 视频VIDEO ，所以在这里比对角标是很有必要的。
+         Question：如何知道av_read_frame(avFormatContext,avPacket)读取的packet是属于哪个流的数据包呢，
+         Answer: 我们通过在AVFormatContext,遍历所有的流信息，然后根据AVMediaType匹配是否为对应的流，然后记下各自流的角标，因此在从AVFormatContext读取的时候就可以对应的上了。
+     ```
+-4.15   修复null指针问题 播放功能完善，队列操作完善；（To 4.14）
+

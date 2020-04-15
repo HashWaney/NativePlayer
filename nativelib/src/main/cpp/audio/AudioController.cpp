@@ -5,14 +5,256 @@
 
 #include "AudioController.h"
 
-AudioController::AudioController(int sample_rate) {
+AudioController::AudioController(PlayStatus *playStatus, int sample_rate) {
+    this->playStatus = playStatus;
+    bufferQueue = new BufferQueue(playStatus);
+    //TODO 为buffer 分配内存空间，按照采样率*声道数*位宽 的形式
+    receiveDataFromFrameBuffer = (uint8_t *) av_malloc(sample_rate * 2 * 2);
+
 
 }
 
 AudioController::~AudioController() {
+    delete bufferQueue;
+}
+
+
+void *play_musicCallback(void *data) {
+    AudioController *audioController = (AudioController *) data;
+
+    //TODO 初始化OpenSL ES 用于播放音频文件
+    audioController->initOpenSLES();
+
+    pthread_exit(&audioController->playThread);
+}
+
+
+void pcmPlayBufferQueueCallBack(SLAndroidSimpleBufferQueueItf bf, void *data) {
+    AudioController *audioController = (AudioController *) data;
+    if (audioController != NULL) {
+        int bufferSize = audioController->resampleAudio();
+        if (bufferSize > 0) {
+            (*audioController->androidSimpleBufferQueueItf)->Enqueue(
+                    audioController->androidSimpleBufferQueueItf,
+                    (char *) audioController->receiveDataFromFrameBuffer, bufferSize);
+        }
+
+    }
 
 }
 
 void AudioController::playMusic() {
+    pthread_create(&playThread, NULL, play_musicCallback, this);
 
+}
+
+void AudioController::initOpenSLES() {
+    SLresult result;
+
+    //1. engine create
+    result = slCreateEngine(&engineObj, 0, 0, 0, 0, 0);
+    //2. realize
+    result = (*engineObj)->Realize(engineObj, SL_BOOLEAN_FALSE);
+    //3. get interface
+    result = (*engineObj)->GetInterface(engineObj, SL_IID_ENGINE, &engineItf);
+
+
+    //4.create mix environmental
+    const SLInterfaceID interfaceID[1] = {SL_IID_ENVIRONMENTALREVERB};
+    const SLboolean interfaceRequest[1] = {SL_BOOLEAN_FALSE};
+
+    result = (*engineItf)->CreateOutputMix(engineItf, &outputMixObj, 1, interfaceID,
+                                           interfaceRequest);
+
+    (void) result;
+    result = (*outputMixObj)->Realize(outputMixObj, SL_BOOLEAN_FALSE);
+    result = (*outputMixObj)->GetInterface(outputMixObj, SL_IID_ENVIRONMENTALREVERB,
+                                           &outPutMixEnvironmentalReverb);
+    if (SL_RESULT_SUCCESS == result) {
+        result = (*outPutMixEnvironmentalReverb)->SetEnvironmentalReverbProperties(
+                outPutMixEnvironmentalReverb, &reverbSettings
+        );
+    }
+
+    SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObj};
+    SLDataSink audioSink = {&outputMix, 0};
+
+    //5. pcm config
+    SLDataLocator_AndroidSimpleBufferQueue androidSimpleBufferQueue = {
+            SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
+            2};
+
+    SLDataFormat_PCM dataFormat_pcm = {SL_DATAFORMAT_PCM,//pcm格式
+                                       2,// 立体声道
+                                       getCurrentSampleRate(sample_rate),
+                                       SL_PCMSAMPLEFORMAT_FIXED_16,//位数16
+                                       SL_PCMSAMPLEFORMAT_FIXED_16,
+                                       SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,
+                                       SL_BYTEORDER_LITTLEENDIAN//结束标志
+    };
+
+    SLDataSource dataSource = {&androidSimpleBufferQueue, &dataFormat_pcm};
+
+    const SLInterfaceID slInterfaceID[1] = {SL_IID_BUFFERQUEUE};
+    const SLboolean requestPlayInter[1] = {SL_BOOLEAN_TRUE};
+    //6. create player
+    (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &dataSource, &audioSink, 1, slInterfaceID,
+                                    requestPlayInter);
+
+    (*playObj)->Realize(playObj, SL_BOOLEAN_FALSE);
+
+    (*playObj)->GetInterface(playObj, SL_IID_PLAY, &playItf);
+
+    (*playObj)->GetInterface(playObj, SL_IID_BUFFERQUEUE, &androidSimpleBufferQueueItf);
+
+    //callback
+    (*androidSimpleBufferQueueItf)->RegisterCallback(androidSimpleBufferQueueItf,
+                                                     pcmPlayBufferQueueCallBack, this);
+    //play status
+    (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
+
+    pcmPlayBufferQueueCallBack(androidSimpleBufferQueueItf, this);
+
+}
+
+SLuint32 AudioController::getCurrentSampleRate(int sample_rate) {
+    int rate = 0;
+    switch (sample_rate) {
+        case 8000:
+            rate = SL_SAMPLINGRATE_8;
+            break;
+        case 11025:
+            rate = SL_SAMPLINGRATE_11_025;
+            break;
+        case 12000:
+            rate = SL_SAMPLINGRATE_12;
+            break;
+        case 16000:
+            rate = SL_SAMPLINGRATE_16;
+            break;
+        case 22050:
+            rate = SL_SAMPLINGRATE_22_05;
+            break;
+        case 24000:
+            rate = SL_SAMPLINGRATE_24;
+            break;
+        case 32000:
+            rate = SL_SAMPLINGRATE_32;
+            break;
+        case 44100:
+            rate = SL_SAMPLINGRATE_44_1;
+            break;
+        case 48000:
+            rate = SL_SAMPLINGRATE_48;
+            break;
+        case 64000:
+            rate = SL_SAMPLINGRATE_64;
+            break;
+        case 88200:
+            rate = SL_SAMPLINGRATE_88_2;
+            break;
+        case 96000:
+            rate = SL_SAMPLINGRATE_96;
+            break;
+        case 192000:
+            rate = SL_SAMPLINGRATE_192;
+            break;
+        default:
+            rate = SL_SAMPLINGRATE_44_1;
+    }
+
+    return rate;
+}
+
+int AudioController::resampleAudio() {
+    while (playStatus != NULL && !playStatus->exit) {
+        avPacket = av_packet_alloc();
+        if (bufferQueue->getPacketFromQueue(avPacket) != 0) {
+            LOG_E("get packet from queue error ,maybe the queue is empty ")
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            continue;
+        }
+        //send packet to avCodecContext
+        codecOperateFlag = avcodec_send_packet(avCodecContext, avPacket);
+        if (codecOperateFlag != 0) {
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            continue;
+        }
+        avFrame = av_frame_alloc();
+        //receive frame from avCodeContext
+        codecOperateFlag = avcodec_receive_frame(avCodecContext, avFrame);
+        //TODO 待验证 是否正确
+        if (codecOperateFlag == 0) {
+            //to config the channel_layout and channels
+            if (avFrame->channel_layout == 0 && avFrame->channels) {
+                avFrame->channel_layout = av_get_default_channel_layout(avFrame->channels);
+            } else if (avFrame->channels == 0 && avFrame->channel_layout) {
+                avFrame->channels = av_get_channel_layout_nb_channels(avFrame->channel_layout);
+            }
+
+            SwrContext *swrContext;
+            swrContext = swr_alloc_set_opts(
+                    NULL,
+                    AV_CH_LAYOUT_STEREO, //输出声道布局 立体
+                    AV_SAMPLE_FMT_S16, //输出格式
+                    avFrame->sample_rate, //输出采样率
+                    avFrame->channel_layout, //输入声道布局
+                    (AVSampleFormat) avFrame->format, //输入格式
+                    avFrame->sample_rate,
+                    NULL, NULL);
+
+            if (!swrContext || swr_init(swrContext) < 0) {
+                av_packet_free(&avPacket);
+                av_free(avPacket);
+                avPacket = NULL;
+                av_frame_free(&avFrame);
+                av_free(avFrame);
+                avFrame = NULL;
+                swr_free(&swrContext);
+                continue;
+            }
+
+
+            //convert frame to the buffer
+            //TODO null point 是因为 receiveDataFormatBuffer没有分配内存空间，所以导致直接崩溃了，因此在构造函数里面进行内存的分配
+            //如果不分配，其实也就验证了对一个空变量进行取地址操作 是无法取地址的，因此取地址一般是分配了一块内存空间，那么就有指针指向这一块内存区域，
+            //所以对于有内存空间的话变量就可以通过&地址符来取出变量的地址，然后进行赋值等系列操作
+            int convert_data = swr_convert(
+                    swrContext,
+                    &receiveDataFromFrameBuffer,
+                    avFrame->nb_samples,
+                    (const uint8_t **) avFrame->data,
+                    avFrame->nb_samples
+            );
+
+            int out_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
+            //采样率*声道数*位宽
+            data_size = convert_data * out_channels * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+
+            //this all and free the var
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            av_frame_free(&avFrame);
+            av_free(avFrame);
+            avFrame = NULL;
+            swr_free(&swrContext);
+            break;
+        } else {
+            av_packet_free(&avPacket);
+            av_free(avPacket);
+            avPacket = NULL;
+            av_frame_free(&avFrame);
+            av_free(avFrame);
+            avFrame = NULL;
+            continue;
+        }
+    }
+
+
+    return data_size;
 }
