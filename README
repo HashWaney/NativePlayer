@@ -26,8 +26,12 @@
      ```
 -4.15   修复null指针问题 播放功能完善，队列操作完善；（To 4.14）
 
+-4.15  增加暂停 恢复播放操作
 
--4.15  时间的计算（针对的是AVPacket 转换为 AVFrame 此时播放的数据是Avframe 因此从该处进行时间的计算）
+
+-4.15 增加播放时长和总时长显示
+
+       时间的计算（针对的是AVPacket 转换为 AVFrame 此时播放的数据是Avframe 因此从该处进行时间的计算）
 
        总时长：   AvFormatContext ->duration
 
