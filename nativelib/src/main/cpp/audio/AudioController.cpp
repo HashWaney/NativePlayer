@@ -291,3 +291,58 @@ void AudioController::resume() {
         (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
     }
 }
+
+void AudioController::release() {
+
+    if (bufferQueue != NULL) {
+        delete (bufferQueue);
+        bufferQueue = NULL;
+    }
+    //播放器相关
+    if (playObj != NULL) {
+        LOG_E("free play obj")
+        (*playObj)->Destroy(playObj);
+        playObj = NULL;
+        playItf = NULL;
+        androidSimpleBufferQueueItf = NULL;
+    }
+
+    //混音器
+    if (outputMixObj != NULL) {
+        LOG_E("free output mix obj")
+        (*outputMixObj)->Destroy(outputMixObj);
+        outputMixObj = NULL;
+        outPutMixEnvironmentalReverb = NULL;
+    }
+    //引擎相关
+    if (engineObj != NULL) {
+        LOG_E("free engine obj")
+        (*engineObj)->Destroy(engineObj);
+        engineObj = NULL;
+        engineItf = NULL;
+    }
+    //存储avframe的buffer
+    if (receiveDataFromFrameBuffer != NULL) {
+        LOG_E("free buffer");
+        free(receiveDataFromFrameBuffer);
+        receiveDataFromFrameBuffer = NULL;
+    }
+
+    //编码器上下文
+    if (avCodecContext != NULL) {
+        LOG_E("free avCodecContext")
+        avcodec_close(avCodecContext);
+        avcodec_free_context(&avCodecContext);
+        avCodecContext = NULL;
+    }
+
+    if (playStatus != NULL) {
+        LOG_E("free playStatus")
+        playStatus = NULL;
+    }
+    if (javaBridge != NULL) {
+        LOG_E("free javaBridge form AudioController");
+        javaBridge = NULL;
+    }
+
+}

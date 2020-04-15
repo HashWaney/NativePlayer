@@ -6,56 +6,67 @@
 #include "FFmpegController.h"
 
 
-void *prepareCallBack(void *data) {
-    FFmpegController *controller = (FFmpegController *) data;
-    controller->prepareTask();
-    pthread_exit(&controller->prepareThread);
-
-
-}
-
-
 FFmpegController::FFmpegController(JavaBridge *javaBridge) {
     this->javaBridge = javaBridge;
     playStatus = new PlayStatus();
+    pthread_mutex_init(&decode_lock, NULL);
 
 
 }
 
 FFmpegController::~FFmpegController() {
-//    delete playStatus;
+    if (playStatus != NULL) {
+        delete (playStatus);
+
+    }
+    pthread_mutex_destroy(&decode_lock);
+
+
+}
+
+void *prepareCallBack(void *data) {
+    FFmpegController *controller = (FFmpegController *) data;
+    controller->prepareTask();
+    pthread_exit(&controller->prepareThread);
+
 }
 
 
 void FFmpegController::prepare(const char *url) {
-
     //TODO 在C++里面开启一个子线程读取url信息
     this->url = url;
-
     pthread_create(&prepareThread, NULL, prepareCallBack, this);
 
+
+}
+
+int avformat_callback(void *data) {
+    FFmpegController *fFmpegController = (FFmpegController *) data;
+    if (fFmpegController->playStatus->exit) {
+        return AVERROR_EOF;
+    }
+    return 0;
 
 }
 
 //2.准备工作（解码操作）
 void FFmpegController::prepareTask() {
 
-    LOG_D("prepare Task begin")
+    pthread_mutex_lock(&decode_lock);
+
     //1.注册所有的编解码器 在libavformat/avformat.h
     av_register_all();
-    LOG_D("av_register_all decoder");
+
 
     //2.网络初始化
     avformat_network_init();
 
     //3.分配avFormatContext 该上下文包含了流媒体的信息：比如是音频流 编解码 视频流
     avFormatContext = avformat_alloc_context();
-    if (avFormatContext != NULL) {
-        LOG_D("avFormatContext alloc");
-    } else {
-        LOG_D("avFormatContext is Null");
-    }
 
+    //TODO
+    avFormatContext->interrupt_callback.callback = avformat_callback;
+    avFormatContext->interrupt_callback.opaque = this;
 
     //4.打开url地址 读取url信息 &avFormatContext 这个是引用  也就是指向指针的指针
     int errorCode = avformat_open_input(&avFormatContext, url, NULL, NULL);
@@ -64,6 +75,8 @@ void FFmpegController::prepareTask() {
         LOG_E("can not open error url: %s", url);
         av_strerror(errorCode, buffer, sizeof(buffer));
         LOG_D("error message: %s \n error code :%d", buffer, errorCode);
+        isDecodeTerminate = true;
+        pthread_mutex_unlock(&decode_lock);
         return;
     }
 
@@ -72,9 +85,11 @@ void FFmpegController::prepareTask() {
     //5.判断读取的媒体信息是否包含流信息
     if (avformat_find_stream_info(avFormatContext, NULL)) {
         LOG_E("can not find streams from %s", url);
+        isDecodeTerminate = true;
+        pthread_mutex_unlock(&decode_lock);
         return;
     }
-    LOG_D("find stream info");
+
 
     //6.遍历avFormatContext 因为avFormatContext 中有流数据相关信息 此处我们要找的是音频流
     // nb_streams: Number of elements in avFormatContext.streams
@@ -105,21 +120,22 @@ void FFmpegController::prepareTask() {
 
     if (!avCodec) {
         LOG_E("error to find codec");
+        isDecodeTerminate = true;
+        pthread_mutex_unlock(&decode_lock);
         return;
     }
     LOG_D("prepare Task join");
 
     //8.分配解码器上下文
     audioController->avCodecContext = avcodec_alloc_context3(avCodec);
-    if (!audioController->avCodecContext) {
-        LOG_E("error to allocate avCodecContext");
-        return;
-    }
+
 
     //9.将解码器参数写入到解码器上下文中
     if (avcodec_parameters_to_context(audioController->avCodecContext,
                                       audioController->avCodecParameters) < 0) {
         LOG_E("error to fill avcodec param to avcodec context");
+        isDecodeTerminate = true;
+        pthread_mutex_unlock(&decode_lock);
         return;
     }
 
@@ -127,16 +143,24 @@ void FFmpegController::prepareTask() {
     //10.用avCodec 实例化AVCodeContext
     if (avcodec_open2(audioController->avCodecContext, avCodec, 0) != 0) {
         LOG_E("error open audio stream");
+        isDecodeTerminate = true;
+        pthread_mutex_unlock(&decode_lock);
         return;
     }
-    javaBridge->onCallPrepared(TASK_THREAD);
-    LOG_D("prepare Task End");
+    if (javaBridge != NULL) {
+        if (playStatus != NULL && !playStatus->exit) { ;
+            javaBridge->onCallPrepared(TASK_THREAD);
+        } else {
+            isDecodeTerminate = true;
+        }
+
+    }
+    pthread_mutex_unlock(&decode_lock);
 
 }
 
 void FFmpegController::startPlay() {
     if (audioController == NULL) {
-        LOG_E("audioController is null");
         return;
     }
     //TODO 执行播放操作，此时可能没有数据，但是不妨碍。只要将数据解析到缓存中，audioController可以从队列中取数据，
@@ -178,6 +202,7 @@ void FFmpegController::startPlay() {
 
 
     }
+    isDecodeTerminate = true;
     //TODO 跳出循环 完成解码
     LOG_D("完成解码");
 
@@ -196,4 +221,47 @@ void FFmpegController::resumePlay() {
     if (audioController != NULL) {
         audioController->resume();
     }
+}
+
+void FFmpegController::release() {
+    LOG_E("begin free the ffmpeg");
+    if (playStatus != NULL && playStatus->exit) {
+        return;
+    }
+    playStatus->exit = true;
+    int sleepCount = 0;
+
+    pthread_mutex_unlock(&decode_lock);
+
+    while (!isDecodeTerminate) {
+
+        if (sleepCount > 1000) {
+            isDecodeTerminate = true;
+
+        }
+        sleepCount++;
+        av_usleep(1000 * 10);//10毫秒
+
+    }
+
+    if (audioController != NULL) {
+        LOG_E("free audioController");
+        audioController->release();
+        delete (audioController);
+        audioController = NULL;
+    }
+
+    if (avFormatContext != NULL) {
+        LOG_E("free avFormatContext");
+        avformat_close_input(&avFormatContext);
+        avformat_free_context(avFormatContext);
+        avFormatContext = NULL;
+    }
+    if (javaBridge != NULL) {
+        LOG_E("free javaBridge");
+        javaBridge = NULL;
+    }
+
+    pthread_mutex_unlock(&decode_lock);
+
 }

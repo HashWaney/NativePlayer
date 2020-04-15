@@ -85,6 +85,8 @@ public:
 
     void resume();
 
+    void release();
+
 };
 
 

@@ -131,6 +131,13 @@ public class PlayController {
 
     //5.停止
     public void stopPlay() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                n_stop();
+            }
+        }).start();
+
 
     }
 
@@ -166,6 +173,8 @@ public class PlayController {
     public native void n_pause();
 
     public native void n_resume();
+
+    public native void n_stop();
 
 
 }

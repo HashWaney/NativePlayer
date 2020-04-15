@@ -14,11 +14,13 @@
 #include "../audio/AudioController.h"
 #include "../javabridge/JavaBridge.h"
 #include "../status/PlayStatus.h"
+#include "time.h"
 
 extern "C"
 {
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
+#include "libavutil/time.h"
 };
 
 class FFmpegController {
@@ -30,12 +32,18 @@ public:
 
     AudioController *audioController = NULL;
 
+    bool isDecodeTerminate = false;
+
 
     ///////JavaBridge////////
     JavaBridge *javaBridge = NULL;
 
     ////playStatus////////
     PlayStatus *playStatus = NULL;
+
+
+    //release lock
+    pthread_mutex_t decode_lock;
 
 
 public:
@@ -52,6 +60,8 @@ public:
     void pausePlay();
 
     void resumePlay();
+
+    void release();
 
 
 };

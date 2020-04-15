@@ -72,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     public void stop(View view) {
+        isPrepared=false;
+        playController.stopPlay();
     }
 
 

@@ -71,4 +71,21 @@ Java_cn_hash_mm_nativelib_PlayController_n_1resume(JNIEnv *env, jobject instance
         fFmpegController->resumePlay();
     }
 
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance) {
+    if (fFmpegController != NULL) {
+
+        fFmpegController->release();
+
+        delete (fFmpegController);
+        fFmpegController = NULL;
+
+        if (javaBridge != NULL) {
+            delete (javaBridge);
+            javaBridge = NULL;
+        }
+
+    }
+
 }
