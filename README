@@ -55,7 +55,9 @@
       TODO seek 功能和 start 功能 反复来回切换，导致崩溃，原因是 prepare 方法调用一次，why。
 
 
+-4.16 增加手动自动播放下一首功能
 
+      播放下一首主要是调用stop 回收资源之后，回调函数到java层 java重新设置url。然后走prepare 这些流程，
 
 
 
