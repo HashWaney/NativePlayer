@@ -216,8 +216,9 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
             //1，释放资源
             isPlaying = false;
             //auto play next after the music is complete .
-            volumeSeekBar.setProgress(0);
+
             playController.playNext(net_url);
+            volumeSeekBar.setProgress(playController.getVolume());
 
         }
 
@@ -230,10 +231,11 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     public void playNext(View view) {
-        LogUtil.logD("current progress:" + volumeSeekBar.getProgress());
-        volumeSeekBar.setProgress(0);
-        volumeSeekBar.jumpDrawablesToCurrentState();
+        LogUtil.logD("current progress:" + positionSeekBar.getProgress());
+        positionSeekBar.setProgress(0);
+        positionSeekBar.jumpDrawablesToCurrentState();
         playController.playNext(net_url);
+        volumeSeekBar.setProgress(playController.getVolume());
 
 
     }

@@ -36,7 +36,7 @@ public class PlayController {
 
     private static int duration = -1;
 
-    private static int current_volume = 100;
+    private static int current_volume = 40;
 
     static {
         System.loadLibrary("native-lib");
@@ -195,6 +195,7 @@ public class PlayController {
     //10.获取音量
 
     public int getVolume() {
+
         return current_volume;
     }
 

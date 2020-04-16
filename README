@@ -59,6 +59,13 @@
 
       播放下一首主要是调用stop 回收资源之后，回调函数到java层 java重新设置url。然后走prepare 这些流程，
 
+-4.16 声音控制
+      注意的是在使用声音接口的时候，需要将SL_IID_VOLUME注册到引擎创建AudioPlayer中去 不然无法生效
+
+      const SLInterfaceId ids[2] ={SL_IID_BUFFERQUEUE,SL_IID_VOLUME}
+
+      CreateAudioPlayer(...., ids,)
+
 
 
 
