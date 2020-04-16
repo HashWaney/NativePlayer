@@ -110,21 +110,25 @@ void AudioController::initOpenSLES() {
 
     SLDataSource dataSource = {&androidSimpleBufferQueue, &dataFormat_pcm};
 
-    const SLInterfaceID slInterfaceID[1] = {SL_IID_BUFFERQUEUE};
-    const SLboolean requestPlayInter[1] = {SL_BOOLEAN_TRUE};
-    //6. create player
-    (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &dataSource, &audioSink, 1, slInterfaceID,
+    const SLInterfaceID slInterfaceID[2] = {SL_IID_BUFFERQUEUE,SL_IID_VOLUME};
+    const SLboolean requestPlayInter[2] = {SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE};
+    //6. create player TODO 声音接口注册 不然声音控制失效
+    (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &dataSource, &audioSink, 2, slInterfaceID,
                                     requestPlayInter);
 
     (*playObj)->Realize(playObj, SL_BOOLEAN_FALSE);
 
     (*playObj)->GetInterface(playObj, SL_IID_PLAY, &playItf);
 
+    (*playObj)->GetInterface(playObj, SL_IID_VOLUME, &pcmVolumePlay);
+
     (*playObj)->GetInterface(playObj, SL_IID_BUFFERQUEUE, &androidSimpleBufferQueueItf);
 
     //callback
     (*androidSimpleBufferQueueItf)->RegisterCallback(androidSimpleBufferQueueItf,
                                                      pcmPlayBufferQueueCallBack, this);
+
+    setAudioVolume(currentVolume);
     //play status
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
 
@@ -328,6 +332,7 @@ void AudioController::release() {
         (*playObj)->Destroy(playObj);
         playObj = NULL;
         playItf = NULL;
+        pcmVolumePlay = NULL;
         androidSimpleBufferQueueItf = NULL;
     }
 
@@ -367,6 +372,48 @@ void AudioController::release() {
     if (javaBridge != NULL) {
         LOG_E("free javaBridge form AudioController");
         javaBridge = NULL;
+    }
+
+}
+
+void AudioController::setAudioVolume(int percent) {
+    currentVolume = percent;
+    if (pcmVolumePlay != NULL) {
+        if(percent > 30)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -20);
+        }
+        else if(percent > 25)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -22);
+        }
+        else if(percent > 20)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -25);
+        }
+        else if(percent > 15)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -28);
+        }
+        else if(percent > 10)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -30);
+        }
+        else if(percent > 5)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -34);
+        }
+        else if(percent > 3)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -37);
+        }
+        else if(percent > 0)
+        {
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -40);
+        }
+        else{
+            (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -100);
+        }
     }
 
 }

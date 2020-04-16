@@ -49,6 +49,8 @@ public:
 
     SLAndroidSimpleBufferQueueItf androidSimpleBufferQueueItf = NULL;
 
+    SLVolumeItf pcmVolumePlay = NULL;
+
 
     //////////////resample AVPacket to AVFrame///////////////////
     AVPacket *avPacket = NULL;
@@ -66,6 +68,7 @@ public:
     double now_time;//当前调用时间
     double last_time; //上一次调用时间
 
+    int currentVolume = 100;// 当前音量
 
 public:
     AudioController(JavaBridge *javaBridge, PlayStatus *playStatus, int sample_rate);
@@ -86,6 +89,8 @@ public:
     void resume();
 
     void release();
+
+    void setAudioVolume(int volume);
 
 };
 

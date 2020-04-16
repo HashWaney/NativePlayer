@@ -122,4 +122,19 @@ Java_cn_hash_mm_nativelib_PlayController_n_1seek(JNIEnv *env, jobject instance, 
         fFmpegController->seek(seconds);
     }
 
+}extern "C"
+JNIEXPORT jint JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1duration(JNIEnv *env, jobject instance) {
+    if (fFmpegController != NULL) {
+        return fFmpegController->duration;
+    }
+
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1setvolume(JNIEnv *env, jobject instance, jint volume) {
+
+    if (fFmpegController != NULL) {
+        fFmpegController->setVolume(volume);
+    }
+
 }

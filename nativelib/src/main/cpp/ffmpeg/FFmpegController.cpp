@@ -64,7 +64,6 @@ void FFmpegController::prepareTask() {
 
     //3.分配avFormatContext 该上下文包含了流媒体的信息：比如是音频流 编解码 视频流
     avFormatContext = avformat_alloc_context();
-    LOG_E("avFormatContext  aaaaa   ");
 
     //TODO
 //    avFormatContext->interrupt_callback.callback = avformat_callback;
@@ -268,6 +267,7 @@ void FFmpegController::release() {
     if (playStatus != NULL && playStatus->exit) {
         return;
     }
+    LOG_E("start release ");
     playStatus->exit = true;
     int sleepCount = 0;
 
@@ -283,12 +283,18 @@ void FFmpegController::release() {
         av_usleep(1000 * 10);//10毫秒
 
     }
+    if (audioController == NULL) {
+        LOG_E("can not free audioController cause is not init");
 
+    }
     if (audioController != NULL) {
         LOG_E("free audioController");
         audioController->release();
         delete (audioController);
         audioController = NULL;
+    }
+    if (avFormatContext == NULL) {
+        LOG_E("can not free avFormat cause is not init");
     }
 
     if (avFormatContext != NULL) {
@@ -301,7 +307,11 @@ void FFmpegController::release() {
         LOG_E("free javaBridge");
         javaBridge = NULL;
     }
+    if (playStatus == NULL) {
+        LOG_E("can not free playStatus cause is not init ");
+    }
     if (playStatus != NULL) {
+        LOG_E("free playStatus");
         delete (playStatus);
         playStatus = NULL;
     }
@@ -343,6 +353,14 @@ void FFmpegController::seek(uint64_t second) {
             playStatus->seekByUser = false;
         }
 
+    }
+
+}
+
+void FFmpegController::setVolume(int volume) {
+    if (audioController!=NULL)
+    {
+        audioController->setAudioVolume(volume);
     }
 
 }

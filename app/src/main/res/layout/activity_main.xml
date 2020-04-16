@@ -40,6 +40,13 @@
             android:onClick="stop"
             android:text="停止" />
 
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="playNext"
+            android:text="切换" />
+
 
     </LinearLayout>
 
@@ -51,25 +58,31 @@
         android:layout_marginTop="10dp"
         android:text="00:00/00:00"
         android:textSize="15sp" />
-    <Button
-        android:layout_width="wrap_content"
-        android:onClick="seek"
-        android:textSize="14sp"
-        android:text="定位"
-        android:layout_height="wrap_content" />
+
 
     <androidx.appcompat.widget.AppCompatSeekBar
-        android:id="@+id/seek"
+        android:id="@+id/position_seek"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:progress="@color/colorAccent"
         android:progressBackgroundTint="@color/colorPrimary" />
 
-    <Button
+    <TextView
         android:layout_width="wrap_content"
-        android:text="下一首"
-        android:onClick="playnext"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:id="@+id/tvVolume"
+        android:textSize="14sp"
+        android:text="音量" />
+
+
+    <androidx.appcompat.widget.AppCompatSeekBar
+        android:id="@+id/volume_seek"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:progress="@color/colorAccent"
+        android:progressBackgroundTint="@color/colorPrimaryDark" />
 
 </LinearLayout>

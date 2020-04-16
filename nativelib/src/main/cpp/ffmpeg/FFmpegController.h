@@ -70,6 +70,8 @@ public:
 
     void seek(uint64_t second);
 
+    void setVolume(int volume);
+
 
 };
 

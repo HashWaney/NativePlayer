@@ -1,10 +1,7 @@
 package cn.hash.mm.nativelib;
 
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
-
-import androidx.core.app.NavUtils;
 
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
@@ -12,7 +9,6 @@ import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
 import cn.hash.mm.nativelib.listener.OnPlayLoadListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
-import cn.hash.mm.nativelib.listener.OnPrepareLoadListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
 
 /**
@@ -37,6 +33,10 @@ public class PlayController {
     private OnPlayCompleteListener onPlayCompleteListener;
 
     private static boolean playNext = false;
+
+    private static int duration = -1;
+
+    private static int current_volume = 100;
 
     static {
         System.loadLibrary("native-lib");
@@ -176,6 +176,28 @@ public class PlayController {
 
     }
 
+    //8.获取播放时长
+    public int getDuration() {
+        if (duration < 0) {
+            duration = n_duration();
+        }
+        return duration;
+    }
+
+    //9.设置音量
+    public void setVolume(int volume) {
+        if (volume >= 0 && volume <= 100) {
+            current_volume = volume;
+            n_setvolume(volume);
+        }
+    }
+
+    //10.获取音量
+
+    public int getVolume() {
+        return current_volume;
+    }
+
     ///////////////////native callback////////////////////////////////////
     public void prepareCallBackFormNative() {
         if (onPrepareListener != null) {
@@ -241,6 +263,10 @@ public class PlayController {
     public native void n_stop(int nextPage);
 
     public native void n_seek(int seconds);
+
+    public native int n_duration();
+
+    public native void n_setvolume(int volume);
 
 
 }

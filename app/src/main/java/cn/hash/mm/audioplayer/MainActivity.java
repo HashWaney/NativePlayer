@@ -4,16 +4,17 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import java.io.File;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatSeekBar;
-
-import java.io.File;
 
 import cn.hash.mm.audioplayer.util.LogUtil;
 import cn.hash.mm.audioplayer.util.PermissionUtil;
@@ -35,11 +36,14 @@ import cn.hash.mm.nativelib.util.TimeUtil;
 public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener, OnPlayLoadListener, OnPlayCompleteListener, OnPrepareListener {
 
     private PlayController playController;
-    private boolean isPrepared = false;
     private boolean isPlaying = false;
-    private TextView tvPlayTime;
+    private TextView tvPlayTime, tvVolume;
+    protected boolean isSeekPosition;
+    private int currentPosition = 0;
+    private AppCompatSeekBar volumeSeekBar, positionSeekBar;
 
-    private AppCompatSeekBar seekBar;
+    private static final int defaultVolume = 40;
+
 
     private Handler timeInfoHandler = new Handler() {
         @Override
@@ -47,16 +51,24 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
             // TODO: 2020-04-15
             switch (msg.what) {
                 case 1:
-                    AudioInfoBean audioInfoBean = (AudioInfoBean) msg.obj;
-                    tvPlayTime.setText(TimeUtil.secToDataFormat(audioInfoBean.getCurrentTime(), audioInfoBean.getTotalTime()) + "/" +
-                            TimeUtil.secToDataFormat(audioInfoBean.getTotalTime(), audioInfoBean.getTotalTime()));
+                    if (!isSeekPosition) {
+                        AudioInfoBean audioInfoBean = (AudioInfoBean) msg.obj;
+                        tvPlayTime.setText(TimeUtil.secToDataFormat(audioInfoBean.getCurrentTime(), audioInfoBean.getTotalTime()) + "/" +
+                                TimeUtil.secToDataFormat(audioInfoBean.getTotalTime(), audioInfoBean.getTotalTime()));
+                        //update the progress
+                        positionSeekBar.setProgress(audioInfoBean.getCurrentTime() * 100 / audioInfoBean.getTotalTime());
+                    }
+
                     break;
+
+
             }
         }
     };
 
 
     private String url = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "fyjili.mp3";
+
     private String net_url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
 
     @Override
@@ -65,7 +77,11 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         setContentView(R.layout.activity_main);
         PermissionUtil.requestPermission(this);
         tvPlayTime = findViewById(R.id.tvPlayTime);
-        seekBar = findViewById(R.id.seek);
+        tvVolume = findViewById(R.id.tvVolume);
+        volumeSeekBar = findViewById(R.id.volume_seek);
+        positionSeekBar = findViewById(R.id.position_seek);
+
+
         playController = new PlayController();
         playController.setOnPauseResumeListener(this);
         playController.setOnPlayCompleteListener(this);
@@ -73,7 +89,14 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         playController.setTimeInfoListener(this);
         playController.setOnPlayErrorListener(this);
         playController.setOnPrepareListener(this);
-        seekBar.setOnSeekBarChangeListener(this);
+        volumeSeekBar.setOnSeekBarChangeListener(this);
+        positionSeekBar.setOnSeekBarChangeListener(this);
+
+
+        playController.setVolume(defaultVolume);
+        tvVolume.setText(String.format("音量: %d", defaultVolume));
+        volumeSeekBar.setProgress(playController.getVolume());
+
 
     }
 
@@ -113,14 +136,13 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     public void stop(View view) {
-        isPrepared = false;
+
         playController.stopAndRelease(-1);
     }
 
 
     @Override
     public void onPauseOrResume(boolean isPause) {
-        isPrepared = false;
         isPlaying = !isPause;
         LogUtil.logD(isPause ? "pause to play:" + Thread.currentThread().getName() : "resume to play:" + Thread.currentThread().getName());
     }
@@ -141,29 +163,48 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        LogUtil.logD("progress:" + progress);
+        if (seekBar.getId() == R.id.position_seek) {
+            LogUtil.logD("position Seek progress:" + progress);
+            if (playController.getDuration() > 0 && isSeekPosition) {
+                currentPosition = playController.getDuration() * progress / 100;
+                LogUtil.logFormat("currentPosition:" + currentPosition + " progress: " + progress);
+            }
+
+
+        } else if (seekBar.getId() == R.id.volume_seek) {
+            LogUtil.logD("volume Seek :" + progress);
+            // TODO: 2020-04-16
+            playController.setVolume(progress);
+            tvVolume.setText("音量:" + playController.getVolume());
+
+        }
 
     }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
         LogUtil.logD("start touch");
+        if (seekBar.getId() == R.id.position_seek) {
+            isSeekPosition = true;
+        } else if (seekBar.getId() == R.id.volume_seek) {
+
+        }
     }
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         LogUtil.logD("stop touch");
+        if (seekBar.getId() == R.id.position_seek) {
+            isSeekPosition = false;
+            playController.seek(currentPosition);
+        }
 
     }
 
-    public void seek(View view) {
-        playController.seek(115);
-    }
 
     @Override
     public void onLoad(boolean isLoad) {
         LogUtil.logD(isLoad ? "加载中..." : "播放中...");
-        isPrepared = isLoad;
         isPlaying = !isLoad;
 
     }
@@ -173,9 +214,9 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         if (isComplete) {
             LogUtil.logD("播放完成");
             //1，释放资源
-            isPrepared = false;
             isPlaying = false;
             //auto play next after the music is complete .
+            volumeSeekBar.setProgress(0);
             playController.playNext(net_url);
 
         }
@@ -188,8 +229,12 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         playController.startPlay();
     }
 
-    public void playnext(View view) {
+    public void playNext(View view) {
+        LogUtil.logD("current progress:" + volumeSeekBar.getProgress());
+        volumeSeekBar.setProgress(0);
+        volumeSeekBar.jumpDrawablesToCurrentState();
         playController.playNext(net_url);
+
 
     }
 }
