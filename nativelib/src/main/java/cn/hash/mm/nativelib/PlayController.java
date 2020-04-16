@@ -4,6 +4,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
+import cn.hash.mm.nativelib.bean.MuteType;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
 import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
@@ -37,6 +38,8 @@ public class PlayController {
     private static int duration = -1;
 
     private static int current_volume = 40;
+
+    private static MuteType muteType = MuteType.MUTE_TYPE_CENTER;
 
     static {
         System.loadLibrary("native-lib");
@@ -199,6 +202,14 @@ public class PlayController {
         return current_volume;
     }
 
+    //11.设置声道
+    public void setMuteType(MuteType m) {
+        muteType = m;
+        n_muteType(m.getValue());
+
+
+    }
+
     ///////////////////native callback////////////////////////////////////
     public void prepareCallBackFormNative() {
         if (onPrepareListener != null) {
@@ -268,6 +279,8 @@ public class PlayController {
     public native int n_duration();
 
     public native void n_setvolume(int volume);
+
+    public native void n_muteType(int muteType);
 
 
 }

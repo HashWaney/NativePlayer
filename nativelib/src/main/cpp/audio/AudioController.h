@@ -51,6 +51,8 @@ public:
 
     SLVolumeItf pcmVolumePlay = NULL;
 
+    SLMuteSoloItf muteSoloItf = NULL;
+
 
     //////////////resample AVPacket to AVFrame///////////////////
     AVPacket *avPacket = NULL;
@@ -69,6 +71,8 @@ public:
     double last_time; //上一次调用时间
 
     int currentVolume = 100;// 当前音量
+
+    int currentMuteType = 2;// 立体声
 
 public:
     AudioController(JavaBridge *javaBridge, PlayStatus *playStatus, int sample_rate);
@@ -91,6 +95,8 @@ public:
     void release();
 
     void setAudioVolume(int volume);
+
+    void setMuteType(int muteType);
 
 };
 

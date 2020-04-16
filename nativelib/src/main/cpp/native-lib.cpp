@@ -137,4 +137,12 @@ Java_cn_hash_mm_nativelib_PlayController_n_1setvolume(JNIEnv *env, jobject insta
         fFmpegController->setVolume(volume);
     }
 
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1muteType(JNIEnv *env, jobject instance, jint muteType) {
+
+    if (fFmpegController != NULL) {
+        fFmpegController->setMute(muteType);
+    }
+
 }

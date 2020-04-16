@@ -66,6 +66,19 @@
 
       CreateAudioPlayer(...., ids,)
 
+-4.16 声道切换
+
+        初始化：
+        (*pcmPlayerObject)->GetInterface(
+        				pcmPlayerObject,
+        				SL_IID_MUTESOLO,
+        				&pcmPlayPlayerMuteSolo);
+        设置声道：
+        (*pcmPlayPlayerMuteSolo)->SetChannelMute(
+        				pcmPlayPlayerMuteSolo,
+        				1,  //0右声道1左声道
+        				false //声道是否开启
+        				);
 
 
 

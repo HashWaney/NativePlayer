@@ -5,6 +5,8 @@
 
 #include "AudioController.h"
 
+typedef const SLboolean pInt[3];
+
 AudioController::AudioController(JavaBridge *javaBridge, PlayStatus *playStatus, int sample_rate) {
     this->playStatus = playStatus;
     this->javaBridge = javaBridge;
@@ -110,10 +112,10 @@ void AudioController::initOpenSLES() {
 
     SLDataSource dataSource = {&androidSimpleBufferQueue, &dataFormat_pcm};
 
-    const SLInterfaceID slInterfaceID[2] = {SL_IID_BUFFERQUEUE,SL_IID_VOLUME};
-    const SLboolean requestPlayInter[2] = {SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE};
+    const SLInterfaceID slInterfaceID[3] = {SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_MUTESOLO};
+    pInt requestPlayInter = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
     //6. create player TODO 声音接口注册 不然声音控制失效
-    (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &dataSource, &audioSink, 2, slInterfaceID,
+    (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &dataSource, &audioSink, 3, slInterfaceID,
                                     requestPlayInter);
 
     (*playObj)->Realize(playObj, SL_BOOLEAN_FALSE);
@@ -121,6 +123,8 @@ void AudioController::initOpenSLES() {
     (*playObj)->GetInterface(playObj, SL_IID_PLAY, &playItf);
 
     (*playObj)->GetInterface(playObj, SL_IID_VOLUME, &pcmVolumePlay);
+    (*playObj)->GetInterface(playObj, SL_IID_MUTESOLO, &muteSoloItf);
+
 
     (*playObj)->GetInterface(playObj, SL_IID_BUFFERQUEUE, &androidSimpleBufferQueueItf);
 
@@ -333,6 +337,7 @@ void AudioController::release() {
         playObj = NULL;
         playItf = NULL;
         pcmVolumePlay = NULL;
+        muteSoloItf = NULL;
         androidSimpleBufferQueueItf = NULL;
     }
 
@@ -379,41 +384,42 @@ void AudioController::release() {
 void AudioController::setAudioVolume(int percent) {
     currentVolume = percent;
     if (pcmVolumePlay != NULL) {
-        if(percent > 30)
-        {
+        if (percent > 30) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -20);
-        }
-        else if(percent > 25)
-        {
+        } else if (percent > 25) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -22);
-        }
-        else if(percent > 20)
-        {
+        } else if (percent > 20) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -25);
-        }
-        else if(percent > 15)
-        {
+        } else if (percent > 15) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -28);
-        }
-        else if(percent > 10)
-        {
+        } else if (percent > 10) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -30);
-        }
-        else if(percent > 5)
-        {
+        } else if (percent > 5) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -34);
-        }
-        else if(percent > 3)
-        {
+        } else if (percent > 3) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -37);
-        }
-        else if(percent > 0)
-        {
+        } else if (percent > 0) {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -40);
-        }
-        else{
+        } else {
             (*pcmVolumePlay)->SetVolumeLevel(pcmVolumePlay, (100 - percent) * -100);
         }
     }
 
+}
+
+void AudioController::setMuteType(int muteType) {
+    this->currentMuteType = muteType;
+    if (muteSoloItf != NULL) {
+        if (muteType == 0) { //left
+            (*muteSoloItf)->SetChannelMute(muteSoloItf, 0, false);
+            (*muteSoloItf)->SetChannelMute(muteSoloItf, 1, true);
+        } else if (muteType == 1) {//right
+            (*muteSoloItf)->SetChannelMute(muteSoloItf, 0, true);
+            (*muteSoloItf)->SetChannelMute(muteSoloItf, 1, false);
+        } else { //center
+
+            (*muteSoloItf)->SetChannelMute(muteSoloItf, 0, false);
+            (*muteSoloItf)->SetChannelMute(muteSoloItf, 1, false);
+        }
+    }
 }

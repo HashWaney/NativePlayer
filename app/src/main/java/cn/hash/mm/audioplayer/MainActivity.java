@@ -20,6 +20,7 @@ import cn.hash.mm.audioplayer.util.LogUtil;
 import cn.hash.mm.audioplayer.util.PermissionUtil;
 import cn.hash.mm.nativelib.PlayController;
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
+import cn.hash.mm.nativelib.bean.MuteType;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
 import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
@@ -238,5 +239,17 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         volumeSeekBar.setProgress(playController.getVolume());
 
 
+    }
+
+    public void left(View view) {
+        playController.setMuteType(MuteType.MUTE_TYPE_LEFT);
+    }
+
+    public void right(View view) {
+        playController.setMuteType(MuteType.MUTE_TYPE_RIGHT);
+    }
+
+    public void center(View view) {
+        playController.setMuteType(MuteType.MUTE_TYPE_CENTER);
     }
 }

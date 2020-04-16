@@ -358,9 +358,14 @@ void FFmpegController::seek(uint64_t second) {
 }
 
 void FFmpegController::setVolume(int volume) {
-    if (audioController!=NULL)
-    {
+    if (audioController != NULL) {
         audioController->setAudioVolume(volume);
     }
 
+}
+
+void FFmpegController::setMute(int muteType) {
+    if (audioController != NULL) {
+        audioController->setMuteType(muteType);
+    }
 }
