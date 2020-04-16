@@ -14,7 +14,7 @@ FFmpegController *fFmpegController = NULL;
 
 _JavaVM *javaVM = NULL;
 
-bool isExit = true;
+int isExit = 0;
 
 pthread_t thread_StartPlay;
 
@@ -88,12 +88,14 @@ Java_cn_hash_mm_nativelib_PlayController_n_1resume(JNIEnv *env, jobject instance
 
 }extern "C"
 JNIEXPORT void JNICALL
-Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance) {
-    if (!isExit) {
+Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance, jint nextPage) {
+    LOG_E("current exit %d", isExit);
+    if (isExit != 0) {
         return;
     }
-
-    isExit = false;
+    isExit = 1;
+    jclass j_clazz = env->GetObjectClass(instance);
+    jmethodID method_next = env->GetMethodID(j_clazz, "callNextAfterInvokeN_Stop", "()V");
     if (fFmpegController != NULL) {
 
         fFmpegController->release();
@@ -105,10 +107,12 @@ Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance) 
             delete (javaBridge);
             javaBridge = NULL;
         }
-
     }
-
-    isExit = true;
+    isExit = 0;
+    //TODO 说明是播放下一首。
+    if (nextPage != -1) {
+        env->CallVoidMethod(instance, method_next);
+    }
 
 }extern "C"
 JNIEXPORT void JNICALL

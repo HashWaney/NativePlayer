@@ -66,4 +66,10 @@
         android:progress="@color/colorAccent"
         android:progressBackgroundTint="@color/colorPrimary" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:text="下一首"
+        android:onClick="playnext"
+        android:layout_height="wrap_content" />
+
 </LinearLayout>

@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
     public void stop(View view) {
         isPrepared = false;
-        playController.stopPlay();
+        playController.stopAndRelease(-1);
     }
 
 
@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     public void seek(View view) {
-        playController.seek(254);
+        playController.seek(115);
     }
 
     @Override
@@ -175,7 +175,8 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
             //1，释放资源
             isPrepared = false;
             isPlaying = false;
-
+            //auto play next after the music is complete .
+            playController.playNext(net_url);
 
         }
 
@@ -185,5 +186,10 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     public void prepare() {
         LogUtil.logD("解码已完成，准备进行播放吧");
         playController.startPlay();
+    }
+
+    public void playnext(View view) {
+        playController.playNext(net_url);
+
     }
 }

@@ -36,6 +36,8 @@ public class PlayController {
 
     private OnPlayCompleteListener onPlayCompleteListener;
 
+    private static boolean playNext = false;
+
     static {
         System.loadLibrary("native-lib");
         System.loadLibrary("avcodec");
@@ -146,11 +148,13 @@ public class PlayController {
 
 
     //5.停止
-    public void stopPlay() {
+    public void stopAndRelease(final int nextPage) {
+        //playNext 重置bean
+        audioInfoBean = null;
         new Thread(new Runnable() {
             @Override
             public void run() {
-                n_stop();
+                n_stop(nextPage);
             }
         }).start();
 
@@ -160,6 +164,16 @@ public class PlayController {
     //6.进度
     public void seek(int second) {
         n_seek(second);
+    }
+
+
+    //7.下一首
+    public void playNext(String url) {
+        resource = url;
+        playNext = true;
+        //释放当前资源
+        stopAndRelease(1);
+
     }
 
     ///////////////////native callback////////////////////////////////////
@@ -179,8 +193,17 @@ public class PlayController {
     }
 
     public void callCompleteFromNative(boolean isComplete) {
+        // TODO: 2020-04-16 播放完成 回收资源
         if (onPlayCompleteListener != null) {
             onPlayCompleteListener.complete(isComplete);
+        }
+    }
+
+
+    public void callNextAfterInvokeN_Stop() {
+        if (playNext) {
+            playNext = false;
+            prepare();
         }
     }
 
@@ -198,16 +221,11 @@ public class PlayController {
 
 
     public void errMessageFromNative(int errorCode, String errorMessage) {
+        // TODO: 2020-04-16  播放出错 回收资源
+        stopAndRelease(-1);
         if (onPlayErrorListener != null) {
             onPlayErrorListener.onError(errorCode, errorMessage);
         }
-    }
-
-    public void callPlayCompleteFromNative(boolean isComplete) {
-        if (onPlayCompleteListener != null) {
-            onPlayCompleteListener.complete(isComplete);
-        }
-
     }
 
 
@@ -220,7 +238,7 @@ public class PlayController {
 
     public native void n_resume();
 
-    public native void n_stop();
+    public native void n_stop(int nextPage);
 
     public native void n_seek(int seconds);
 
