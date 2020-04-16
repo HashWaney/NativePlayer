@@ -8,7 +8,9 @@ import androidx.core.app.NavUtils;
 
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
+import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
+import cn.hash.mm.nativelib.listener.OnPlayLoadListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
 import cn.hash.mm.nativelib.listener.OnPrepareLoadListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
@@ -24,13 +26,15 @@ public class PlayController {
 
     private OnPrepareListener onPrepareListener;
 
-    private OnPauseResumeListener onPauseResumeListener;
+    private OnPlayLoadListener onPlayLoadListener;
 
-    private OnPrepareLoadListener onPrepareLoadListener;
+    private OnPauseResumeListener onPauseResumeListener;
 
     private OnTimeInfoListener timeInfoListener;
 
     private OnPlayErrorListener onPlayErrorListener;
+
+    private OnPlayCompleteListener onPlayCompleteListener;
 
     static {
         System.loadLibrary("native-lib");
@@ -65,9 +69,6 @@ public class PlayController {
         this.onPauseResumeListener = onPauseResumeListener;
     }
 
-    public void setOnPrepareLoadListener(OnPrepareLoadListener onPrepareLoadListener) {
-        this.onPrepareLoadListener = onPrepareLoadListener;
-    }
 
     public void setTimeInfoListener(OnTimeInfoListener timeInfoListener) {
         this.timeInfoListener = timeInfoListener;
@@ -75,6 +76,14 @@ public class PlayController {
 
     public void setOnPlayErrorListener(OnPlayErrorListener errorListener) {
         this.onPlayErrorListener = errorListener;
+    }
+
+    public void setOnPlayLoadListener(OnPlayLoadListener onPlayLoadListener) {
+        this.onPlayLoadListener = onPlayLoadListener;
+    }
+
+    public void setOnPlayCompleteListener(OnPlayCompleteListener onPlayCompleteListener) {
+        this.onPlayCompleteListener = onPlayCompleteListener;
     }
 
     public PlayController() {
@@ -158,8 +167,20 @@ public class PlayController {
         if (onPrepareListener != null) {
             onPrepareListener.prepare();
         }
-        if (onPrepareLoadListener != null) {
-            onPrepareLoadListener.onPrepareLoad(true);
+
+    }
+
+
+    public void callLoadFromNative(boolean isLoad) {
+        if (onPlayLoadListener != null) {
+            onPlayLoadListener.onLoad(isLoad);
+
+        }
+    }
+
+    public void callCompleteFromNative(boolean isComplete) {
+        if (onPlayCompleteListener != null) {
+            onPlayCompleteListener.complete(isComplete);
         }
     }
 
@@ -180,6 +201,13 @@ public class PlayController {
         if (onPlayErrorListener != null) {
             onPlayErrorListener.onError(errorCode, errorMessage);
         }
+    }
+
+    public void callPlayCompleteFromNative(boolean isComplete) {
+        if (onPlayCompleteListener != null) {
+            onPlayCompleteListener.complete(isComplete);
+        }
+
     }
 
 

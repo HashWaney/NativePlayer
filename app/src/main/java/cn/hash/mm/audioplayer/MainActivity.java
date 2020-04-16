@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -21,9 +20,10 @@ import cn.hash.mm.audioplayer.util.PermissionUtil;
 import cn.hash.mm.nativelib.PlayController;
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
+import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
+import cn.hash.mm.nativelib.listener.OnPlayLoadListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
-import cn.hash.mm.nativelib.listener.OnPrepareLoadListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
 import cn.hash.mm.nativelib.util.TimeUtil;
 
@@ -32,10 +32,11 @@ import cn.hash.mm.nativelib.util.TimeUtil;
  */
 
 
-public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnPrepareLoadListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener {
+public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener, OnPlayLoadListener, OnPlayCompleteListener, OnPrepareListener {
 
     private PlayController playController;
     private boolean isPrepared = false;
+    private boolean isPlaying = false;
     private TextView tvPlayTime;
 
     private AppCompatSeekBar seekBar;
@@ -67,10 +68,13 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         seekBar = findViewById(R.id.seek);
         playController = new PlayController();
         playController.setOnPauseResumeListener(this);
-        playController.setOnPrepareLoadListener(this);
+        playController.setOnPlayCompleteListener(this);
+        playController.setOnPlayLoadListener(this);
         playController.setTimeInfoListener(this);
         playController.setOnPlayErrorListener(this);
+        playController.setOnPrepareListener(this);
         seekBar.setOnSeekBarChangeListener(this);
+
     }
 
     @Override
@@ -79,52 +83,51 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         PermissionUtil.onRequestPermissionResult(requestCode, permissions, grantResults);
     }
 
+
+    public void start(View view) {
+        prepared(url);
+
+    }
+
+    public void prepared(String url) {
+        LogUtil.logD("执行prepared 方法");
+
+        playController.setResource(url);
+        playController.prepare();
+    }
+
+
+    public void resume(View view) {
+        if (!isPlaying) {
+            playController.resumePlay();
+
+        }
+
+    }
+
+    public void pause(View view) {
+        if (isPlaying) {
+            playController.pausePlay();
+
+        }
+    }
+
     public void stop(View view) {
         isPrepared = false;
         playController.stopPlay();
     }
 
 
-    public void resume(View view) {
-        playController.resumePlay();
-
-    }
-
-    public void pause(View view) {
-        playController.pausePlay();
-    }
-
-    public void start(View view) {
-        if (isPrepared) {
-            return;
-        }
-        playController.setResource(url);
-        playController.prepare();
-        playController.setOnPrepareListener(new OnPrepareListener() {
-            @Override
-            public void prepare() {
-                LogUtil.logD("解码已完成，准备进行播放吧");
-                playController.startPlay();
-            }
-        });
-    }
-
     @Override
     public void onPauseOrResume(boolean isPause) {
-        isPrepared = true;
+        isPrepared = false;
+        isPlaying = !isPause;
         LogUtil.logD(isPause ? "pause to play:" + Thread.currentThread().getName() : "resume to play:" + Thread.currentThread().getName());
     }
 
-    @Override
-    public void onPrepareLoad(boolean isLoad) {
-        isPrepared = true;
-        LogUtil.logD(isLoad ? "加载中..." : "播放中...");
-    }
 
     @Override
     public void getCurrentTimeInfo(AudioInfoBean audioInfoBean) {
-        LogUtil.logFormat(TimeUtil.secToDataFormat(audioInfoBean.getCurrentTime(), audioInfoBean.getTotalTime()) + "/" +
-                TimeUtil.secToDataFormat(audioInfoBean.getTotalTime(), audioInfoBean.getTotalTime()));
         Message message = Message.obtain();
         message.what = 1;
         message.obj = audioInfoBean;
@@ -154,6 +157,33 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     public void seek(View view) {
-        playController.seek(111);
+        playController.seek(254);
+    }
+
+    @Override
+    public void onLoad(boolean isLoad) {
+        LogUtil.logD(isLoad ? "加载中..." : "播放中...");
+        isPrepared = isLoad;
+        isPlaying = !isLoad;
+
+    }
+
+    @Override
+    public void complete(boolean isComplete) {
+        if (isComplete) {
+            LogUtil.logD("播放完成");
+            //1，释放资源
+            isPrepared = false;
+            isPlaying = false;
+
+
+        }
+
+    }
+
+    @Override
+    public void prepare() {
+        LogUtil.logD("解码已完成，准备进行播放吧");
+        playController.startPlay();
     }
 }

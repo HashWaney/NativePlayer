@@ -14,6 +14,16 @@ FFmpegController *fFmpegController = NULL;
 
 _JavaVM *javaVM = NULL;
 
+bool isExit = true;
+
+pthread_t thread_StartPlay;
+
+void *startToPlay(void *data) {
+    FFmpegController *fFmpegController = (FFmpegController *) data;
+    fFmpegController->startPlay();
+    pthread_exit(&thread_StartPlay);
+}
+
 
 
 //TODO 获取JavaVM 必须重写Java_OnLoad
@@ -28,7 +38,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *versio) {
     return JNI_VERSION_1_6;
 }
 
-
+/**
+ * 初始化只能初始化一次。不能反复初始化。
+ */
 extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1prepare(JNIEnv *env, jobject instance, jstring source) {
@@ -39,9 +51,12 @@ Java_cn_hash_mm_nativelib_PlayController_n_1prepare(JNIEnv *env, jobject instanc
         if (javaBridge == NULL) {
             javaBridge = new JavaBridge(javaVM, env, &instance);
         }
-        fFmpegController = new FFmpegController(javaBridge);
+        javaBridge->onCallLoad(MAIN_THREAD, true);
+        fFmpegController = new FFmpegController(javaBridge, url);
+        //函数只能调用一次啊 不能反复调用啊 TODO ? why
+        fFmpegController->prepare(url);
     }
-    fFmpegController->prepare(url);
+
 }
 
 extern "C"
@@ -50,7 +65,7 @@ Java_cn_hash_mm_nativelib_PlayController_n_1startPlay(JNIEnv *env, jobject insta
 
     LOG_D("startPlay");
     if (fFmpegController != NULL) {
-        fFmpegController->startPlay();
+        pthread_create(&thread_StartPlay, NULL, startToPlay, fFmpegController);
     }
 
 }extern "C"
@@ -74,6 +89,11 @@ Java_cn_hash_mm_nativelib_PlayController_n_1resume(JNIEnv *env, jobject instance
 }extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance) {
+    if (!isExit) {
+        return;
+    }
+
+    isExit = false;
     if (fFmpegController != NULL) {
 
         fFmpegController->release();
@@ -87,6 +107,8 @@ Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance) 
         }
 
     }
+
+    isExit = true;
 
 }extern "C"
 JNIEXPORT void JNICALL

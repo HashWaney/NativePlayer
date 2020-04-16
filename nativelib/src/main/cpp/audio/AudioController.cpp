@@ -181,15 +181,29 @@ SLuint32 AudioController::getCurrentSampleRate(int sample_rate) {
     return rate;
 }
 
+// 重采样数据进行播放
 int AudioController::resampleAudio() {
+
+    data_size = 0;
+
     while (playStatus != NULL && !playStatus->exit) {
 
         //use the seek flag to declare i am not effect the process
         if (playStatus->seekByUser) {
             continue;
         }
-        if (bufferQueue->getQueueSize() == 0) { //加载中
+        if (bufferQueue->getQueueSize() == 0) { //loading
+            LOG_E("loading....");
+            if (!playStatus->isLoad) {
+                playStatus->isLoad = true;
+                javaBridge->onCallLoad(TASK_THREAD, true);
+            }
             continue;
+        } else { //playing
+            if (playStatus->isLoad) {
+                playStatus->isLoad = false;
+                javaBridge->onCallLoad(TASK_THREAD, false);
+            }
 
         }
 

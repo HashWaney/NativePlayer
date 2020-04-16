@@ -6,7 +6,8 @@
 #include "FFmpegController.h"
 
 
-FFmpegController::FFmpegController(JavaBridge *javaBridge) {
+FFmpegController::FFmpegController(JavaBridge *javaBridge, const char *url) {
+    this->url = url;
     this->javaBridge = javaBridge;
     playStatus = new PlayStatus();
     pthread_mutex_init(&decode_lock, NULL);
@@ -16,10 +17,7 @@ FFmpegController::FFmpegController(JavaBridge *javaBridge) {
 }
 
 FFmpegController::~FFmpegController() {
-    if (playStatus != NULL) {
-        delete (playStatus);
 
-    }
     pthread_mutex_destroy(&decode_lock);
     pthread_mutex_destroy((&seek_lock));
 
@@ -55,6 +53,7 @@ int avformat_callback(void *data) {
 void FFmpegController::prepareTask() {
 
     pthread_mutex_lock(&decode_lock);
+    LOG_E("prepare to decode  form native");
 
     //1.注册所有的编解码器 在libavformat/avformat.h
     av_register_all();
@@ -65,13 +64,15 @@ void FFmpegController::prepareTask() {
 
     //3.分配avFormatContext 该上下文包含了流媒体的信息：比如是音频流 编解码 视频流
     avFormatContext = avformat_alloc_context();
+    LOG_E("avFormatContext  aaaaa   ");
 
     //TODO
-    avFormatContext->interrupt_callback.callback = avformat_callback;
-    avFormatContext->interrupt_callback.opaque = this;
+//    avFormatContext->interrupt_callback.callback = avformat_callback;
+//    avFormatContext->interrupt_callback.opaque = this;
 
     //4.打开url地址 读取url信息 &avFormatContext 这个是引用  也就是指向指针的指针
     int errorCode = avformat_open_input(&avFormatContext, url, NULL, NULL);
+    LOG_E("error Code: %d", errorCode);
     char buffer[1024] = {0};
     if (errorCode != 0) {
         if (javaBridge != NULL) {
@@ -141,6 +142,12 @@ void FFmpegController::prepareTask() {
 
     //8.分配解码器上下文
     audioController->avCodecContext = avcodec_alloc_context3(avCodec);
+    if (!audioController->avCodecContext) {
+        javaBridge->onCallErrMessage(TASK_THREAD, 1008, "can not alloc codeccontext");
+        isDecodeTerminate = true;
+        pthread_mutex_unlock(&decode_lock);
+        return;
+    }
 
 
     //9.将解码器参数写入到解码器上下文中
@@ -184,11 +191,9 @@ void FFmpegController::startPlay() {
     if (audioController == NULL) {
         return;
     }
+    LOG_E("start to play form native")
     //TODO 执行播放操作，此时可能没有数据，但是不妨碍。只要将数据解析到缓存中，audioController可以从队列中取数据，
     audioController->playMusic();
-
-
-    int decodeCount = 0;
 
     while (playStatus != NULL && !playStatus->exit) {
 
@@ -203,14 +208,17 @@ void FFmpegController::startPlay() {
 
         AVPacket *avPacket = av_packet_alloc();
         //TODO 解码过程就是从AvFrameContext中获取被压缩的数据包AVPacket，因此可以把这些数据包存入到队列中，完成边解码边播放的功能
-        if (av_read_frame(avFormatContext, avPacket) == 0) {
+
+        pthread_mutex_lock(&decode_lock);
+        int ret = av_read_frame(avFormatContext, avPacket);
+        pthread_mutex_unlock(&decode_lock);
+        if (ret == 0) {
 
             //注意AVFormatContext中包含了多个流信息，每个流信息在AVMediaType中去匹配，比如音频AUDIO 视频VIDEO ，所以在这里比对角标是很有必要的。
             //Question：如何知道av_read_frame(avFormatContext,avPacket)读取的packet是属于哪个流的数据包呢，
             //Answer: 我们通过在AVFormatContext,遍历所有的流信息，然后根据AVMediaType匹配是否为对应的流，然后记下各自流的角标，因此在从AVFormatContext读取的时候就可以对应的上了。
             if (avPacket->stream_index == audioController->streamIndex) {
-                decodeCount++;
-                LOG_D("当前解码 %d 帧", decodeCount);
+
                 audioController->bufferQueue->putPacketToQueue(avPacket);
             } else {
                 av_packet_free(&avPacket);
@@ -229,15 +237,16 @@ void FFmpegController::startPlay() {
                     break;
                 }
             }
+            //TODO 退出循环
+            break;
         }
 
 
     }
+    if (javaBridge != NULL) {
+        javaBridge->onCallComplete(TASK_THREAD, true);
+    }
     isDecodeTerminate = true;
-    //TODO 跳出循环 完成解码
-    LOG_D("完成解码");
-
-
 }
 
 void FFmpegController::pausePlay() {
@@ -291,6 +300,10 @@ void FFmpegController::release() {
     if (javaBridge != NULL) {
         LOG_E("free javaBridge");
         javaBridge = NULL;
+    }
+    if (playStatus != NULL) {
+        delete (playStatus);
+        playStatus = NULL;
     }
 
     pthread_mutex_unlock(&decode_lock);

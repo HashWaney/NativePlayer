@@ -52,7 +52,7 @@ public:
 
 
 public:
-    FFmpegController(JavaBridge *javaBridge);
+    FFmpegController(JavaBridge *javaBridge, const char *url);
 
     ~FFmpegController();
 

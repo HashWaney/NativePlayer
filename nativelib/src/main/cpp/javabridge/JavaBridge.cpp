@@ -21,6 +21,8 @@ JavaBridge::JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj) {
     method_errorMessage = env->GetMethodID(java_clazz, "errMessageFromNative",
                                            "(ILjava/lang/String;)V");
 
+    method_load = env->GetMethodID(java_clazz, "callLoadFromNative", "(Z)V");
+    method_complete = env->GetMethodID(java_clazz, "callCompleteFromNative", "(Z)V");
 }
 
 JavaBridge::~JavaBridge() {
@@ -77,6 +79,36 @@ void JavaBridge::onCallErrMessage(int type, int errCode, char *errMessage) {
         jstring message = jniEnv->NewStringUTF(errMessage);
         jniEnv->CallVoidMethod(instance, method_errorMessage, errCode, message);
         jniEnv->DeleteLocalRef(message);
+        vm->DetachCurrentThread();
+
+    }
+
+}
+
+void JavaBridge::onCallLoad(int type, bool isLoad) {
+    if (type == MAIN_THREAD) {
+        env->CallVoidMethod(instance, method_load, isLoad);
+
+    } else {
+        JNIEnv *jniEnv;
+        if (vm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+            return;
+        }
+        jniEnv->CallVoidMethod(instance, method_load, isLoad);
+        vm->DetachCurrentThread();
+    }
+
+}
+
+void JavaBridge::onCallComplete(int type, bool isComplete) {
+    if (type == MAIN_THREAD) {
+        env->CallVoidMethod(instance, method_complete, isComplete);
+    } else {
+        JNIEnv *jniEnv;
+        if (vm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+
+        }
+        jniEnv->CallVoidMethod(instance, method_complete, isComplete);
         vm->DetachCurrentThread();
 
     }

@@ -24,7 +24,7 @@ int BufferQueue::putPacketToQueue(AVPacket *packet) {
 
     queuePacket.push(packet);
 
-    LOG_E("放入一个AVPacket 到容器中 ，队列个数为 %d", queuePacket.size());
+//    LOG_E("放入一个AVPacket 到容器中 ，队列个数为 %d", queuePacket.size());
     //todo 通知消费者进行消费
     pthread_cond_signal(&condPacket);
 
@@ -49,7 +49,7 @@ int BufferQueue::getPacketFromQueue(AVPacket *packet) {
             av_packet_free(&avPacket);
             av_free(avPacket);
             avPacket = NULL;
-            LOG_D("取出一个AvPacket 还剩下%d个", queuePacket.size());
+//            LOG_D("取出一个AvPacket 还剩下%d个", queuePacket.size());
             //TODO 跳出循环，每次只取出一个
             break;
         } else {
