@@ -59,6 +59,12 @@ add_library(
         src/main/cpp/status/PlayStatus.cpp
         src/main/cpp/javabridge/JavaBridge.cpp
 
+        src/main/cpp/soundtouch/SoundTouch/AAFilter.cpp
+        src/main/cpp/soundtouch/SoundTouch/FIFOSampleBuffer.cpp
+        src/main/cpp/soundtouch/SoundTouch/FIRFilter.cpp
+        src/main/cpp/soundtouch/SoundTouch/cpu_detect_x86.cpp
+
+
 )
 
 target_link_libraries(
