@@ -50,6 +50,7 @@ public class PlayController {
         System.loadLibrary("avutil");
         System.loadLibrary("swresample");
         System.loadLibrary("swscale");
+        System.loadLibrary("lame");
     }
 
     //播放源
@@ -281,6 +282,8 @@ public class PlayController {
     public native void n_setvolume(int volume);
 
     public native void n_muteType(int muteType);
+
+    public native String getLameVersion();
 
 
 }

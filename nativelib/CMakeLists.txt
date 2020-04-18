@@ -47,6 +47,12 @@ set_target_properties(swscale
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/libswscale.so)
 
+add_library(lame SHARED IMPORTED)
+set_target_properties(lame
+        PROPERTIES IMPORTED_LOCATION
+        ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/liblame.so
+        )
+
 add_library(
         native-lib
 
@@ -63,7 +69,14 @@ add_library(
         src/main/cpp/soundtouch/SoundTouch/FIFOSampleBuffer.cpp
         src/main/cpp/soundtouch/SoundTouch/FIRFilter.cpp
         src/main/cpp/soundtouch/SoundTouch/cpu_detect_x86.cpp
-
+        src/main/cpp/soundtouch/SoundTouch/sse_optimized.cpp
+        src/main/cpp/soundtouch/SoundTouch/RateTransposer.cpp
+        src/main/cpp/soundtouch/SoundTouch/SoundTouch.cpp
+        src/main/cpp/soundtouch/SoundTouch/InterpolateCubic.cpp
+        src/main/cpp/soundtouch/SoundTouch/InterpolateLinear.cpp
+        src/main/cpp/soundtouch/SoundTouch/InterpolateShannon.cpp
+        src/main/cpp/soundtouch/SoundTouch/TDStretch.cpp
+        src/main/cpp/soundtouch/SoundTouch/PeakFinder.cpp
 
 )
 
@@ -89,5 +102,7 @@ target_link_libraries(
         swresample
 
         swscale
+
+        lame
 
 )

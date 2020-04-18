@@ -44,8 +44,8 @@
 #ifndef AAFilter_H
 #define AAFilter_H
 
-#include "STTypes.h"
-#include "FIFOSampleBuffer.h"
+#include "../include/STTypes.h"
+#include "../include/FIFOSampleBuffer.h"
 
 namespace soundtouch
 {

@@ -75,7 +75,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "SoundTouch.h"
+#include "../include/SoundTouch.h"
 #include "TDStretch.h"
 #include "RateTransposer.h"
 #include "cpu_detect.h"

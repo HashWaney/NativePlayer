@@ -65,7 +65,7 @@ void JavaBridge::onCallTimeInfo(int type, int currentTime, int totalTime) {
 
 }
 
-void JavaBridge::onCallErrMessage(int type, int errCode, char *errMessage) {
+void JavaBridge::onCallErrMessage(int type, int errCode, const char *errMessage) {
     if (type == MAIN_THREAD) {
         jstring message = env->NewStringUTF(errMessage);
         env->CallVoidMethod(instance, method_errorMessage, errCode, message);

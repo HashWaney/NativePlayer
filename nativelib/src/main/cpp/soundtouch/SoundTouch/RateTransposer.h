@@ -47,10 +47,10 @@
 
 #include <stddef.h>
 #include "AAFilter.h"
-#include "FIFOSamplePipe.h"
-#include "FIFOSampleBuffer.h"
+#include "../include/FIFOSamplePipe.h"
+#include "../include/FIFOSampleBuffer.h"
 
-#include "STTypes.h"
+#include "../include/STTypes.h"
 
 namespace soundtouch
 {

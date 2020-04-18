@@ -313,6 +313,7 @@ int AudioController::resampleAudio() {
 
 void AudioController::pause() {
     if (playItf != NULL) {
+        LOG_E("pause");
         (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED);
     }
 
@@ -320,6 +321,7 @@ void AudioController::pause() {
 
 void AudioController::resume() {
     if (playItf != NULL) {
+        LOG_E("resume");
         (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
     }
 }

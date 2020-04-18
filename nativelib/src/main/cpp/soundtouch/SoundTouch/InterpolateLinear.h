@@ -37,7 +37,7 @@
 #define _InterpolateLinear_H_
 
 #include "RateTransposer.h"
-#include "STTypes.h"
+#include "../include/STTypes.h"
 
 namespace soundtouch
 {

@@ -40,7 +40,7 @@
 
 #include <math.h>
 #include "InterpolateShannon.h"
-#include "STTypes.h"
+#include "../include/STTypes.h"
 
 using namespace soundtouch;
 

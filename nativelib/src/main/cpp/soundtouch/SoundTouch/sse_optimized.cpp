@@ -52,7 +52,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "cpu_detect.h"
-#include "STTypes.h"
+#include "../include/STTypes.h"
 
 using namespace soundtouch;
 

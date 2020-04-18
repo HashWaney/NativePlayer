@@ -53,7 +53,7 @@
 #include <math.h>
 #include <float.h>
 
-#include "STTypes.h"
+#include "../include/STTypes.h"
 #include "cpu_detect.h"
 #include "TDStretch.h"
 

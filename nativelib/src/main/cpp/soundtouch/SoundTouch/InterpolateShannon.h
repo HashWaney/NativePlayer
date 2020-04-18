@@ -42,7 +42,7 @@
 #define _InterpolateShannon_H_
 
 #include "RateTransposer.h"
-#include "STTypes.h"
+#include "../include/STTypes.h"
 
 namespace soundtouch
 {

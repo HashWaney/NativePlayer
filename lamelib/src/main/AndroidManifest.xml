@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="cn.hash.mm.lamelib"
+    android:compileSdkVersion="28"
+    android:minSdkVersion="16"
+    />

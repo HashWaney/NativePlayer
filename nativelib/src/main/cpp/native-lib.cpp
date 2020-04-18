@@ -6,7 +6,7 @@
 #include "log/AudioLog.h"
 #include "ffmpeg/FFmpegController.h"
 #include "javabridge/JavaBridge.h"
-
+#include "lame.h"
 
 JavaBridge *javaBridge = NULL;
 
@@ -21,6 +21,8 @@ pthread_t thread_StartPlay;
 void *startToPlay(void *data) {
     FFmpegController *fFmpegController = (FFmpegController *) data;
     fFmpegController->startPlay();
+
+
     pthread_exit(&thread_StartPlay);
 }
 
@@ -129,7 +131,8 @@ Java_cn_hash_mm_nativelib_PlayController_n_1duration(JNIEnv *env, jobject instan
         return fFmpegController->duration;
     }
 
-}extern "C"
+}
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1setvolume(JNIEnv *env, jobject instance, jint volume) {
 
@@ -145,4 +148,12 @@ Java_cn_hash_mm_nativelib_PlayController_n_1muteType(JNIEnv *env, jobject instan
         fFmpegController->setMute(muteType);
     }
 
+}extern "C"
+JNIEXPORT jstring JNICALL
+Java_cn_hash_mm_nativelib_PlayController_getLameVersion(JNIEnv *env, jobject instance) {
+
+    // TODO
+
+
+    return env->NewStringUTF(get_lame_version());
 }

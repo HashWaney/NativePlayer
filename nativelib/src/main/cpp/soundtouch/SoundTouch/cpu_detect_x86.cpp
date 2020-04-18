@@ -40,7 +40,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "cpu_detect.h"
-#include "STTypes.h"
+#include "../include/STTypes.h"
 
 
 #if defined(SOUNDTOUCH_ALLOW_X86_OPTIMIZATIONS)

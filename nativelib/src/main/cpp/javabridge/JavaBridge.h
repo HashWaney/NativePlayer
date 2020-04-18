@@ -35,7 +35,7 @@ public:
 
     void onCallTimeInfo(int type, int currentTime, int totalTime);
 
-    void onCallErrMessage(int type, int errCode, char *errMessage);
+    void onCallErrMessage(int type, int errCode, const char *errMessage);
 
 
     void onCallLoad(int type, bool isLoad);

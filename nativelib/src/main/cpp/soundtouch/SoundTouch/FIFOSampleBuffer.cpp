@@ -48,7 +48,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "FIFOSampleBuffer.h"
+#include "../include/FIFOSampleBuffer.h"
 
 using namespace soundtouch;
 

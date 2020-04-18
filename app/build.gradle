@@ -17,6 +17,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
 }
 
 dependencies {
@@ -29,4 +30,5 @@ dependencies {
 
     //引入nativelib库
     implementation project(":nativelib")
+//    implementation project(":lamelib")
 }
