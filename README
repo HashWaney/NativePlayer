@@ -82,7 +82,7 @@
 
 
 
-
+TODO lame so compile
 -4.18 记录lame的编译 通过采用CMake方式编译，导入源码 编写make脚本，但是一定是要切记的是
       由于lame库是c程序编写的，里面有一个STD_HEADERS的宏定义 需要在build.gradle中的cFlags 而不是默认生成的
       cppFlags 定义"-DSTD_HEADERS" 相当于是告诉编译器 我们定义一个STD_HEADERS的宏定义，不然编译过程中会报错。
