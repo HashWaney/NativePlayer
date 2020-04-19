@@ -5,7 +5,6 @@
 
 #include "AudioController.h"
 
-typedef const SLboolean pInt[3];
 
 AudioController::AudioController(JavaBridge *javaBridge, PlayStatus *playStatus, int sample_rate) {
     this->playStatus = playStatus;
@@ -113,7 +112,7 @@ void AudioController::initOpenSLES() {
     SLDataSource dataSource = {&androidSimpleBufferQueue, &dataFormat_pcm};
 
     const SLInterfaceID slInterfaceID[3] = {SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_MUTESOLO};
-    pInt requestPlayInter = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
+    const SLboolean  requestPlayInter[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
     //6. create player TODO 声音接口注册 不然声音控制失效
     (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &dataSource, &audioSink, 3, slInterfaceID,
                                     requestPlayInter);
