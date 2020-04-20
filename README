@@ -92,4 +92,8 @@
       set_target_properties(
                lame
                 PROPERTIES PROPERTIES_LOCATION
-                    路径）
+
+                 路径）
+
+-4.20 梳理soundTouch变速变调的流程，
+      详细查看AudioController.cpp中的getSoundTouchData方法

@@ -8,6 +8,7 @@ import android.os.Message;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 
@@ -168,8 +169,14 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     @Override
-    public void onError(int errorCode, String errorMessage) {
+    public void onError(int errorCode, final String errorMessage) {
         LogUtil.logFormat(errorMessage + "/ code :" + errorCode);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
