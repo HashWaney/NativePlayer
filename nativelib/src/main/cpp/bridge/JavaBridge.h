@@ -24,7 +24,11 @@ public:
     _JavaVM *vm = NULL;
     JNIEnv *env = NULL;
     jobject instance;
-    jmethodID method_prepared, method_timeInfo, method_errorMessage, method_load, method_complete;
+    jmethodID method_prepared; // 准备的 回调
+    jmethodID method_load; // 加载的回调
+    jmethodID method_timeInfo; //播放时长的回调
+    jmethodID  method_errorMessage; //错误信息的回调
+    jmethodID method_complete; //播放完成的回调
 public:
     JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj);
 

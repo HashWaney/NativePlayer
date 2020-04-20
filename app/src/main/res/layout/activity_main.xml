@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="start"
-            android:text="开始" />
+            android:text="准备" />
 
         <Button
             android:layout_width="0dp"

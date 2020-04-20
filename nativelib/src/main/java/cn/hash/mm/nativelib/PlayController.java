@@ -39,7 +39,11 @@ public class PlayController {
 
     private static int current_volume = 40;
 
+    private static float pitch = 1.0f;
+    private static float speed = 1.0f;
+
     private static MuteType muteType = MuteType.MUTE_TYPE_CENTER;
+
 
     static {
         System.loadLibrary("native-lib");
@@ -50,8 +54,8 @@ public class PlayController {
         System.loadLibrary("avutil");
         System.loadLibrary("swresample");
         System.loadLibrary("swscale");
-        System.loadLibrary("lame");
     }
+
 
     //播放源
     private static String resource;
@@ -125,6 +129,10 @@ public class PlayController {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                setVolume(current_volume);
+                setMuteType(muteType);
+                setSpeed(speed);
+                setPitch(pitch);
                 n_startPlay();
             }
         }).start();
@@ -155,6 +163,7 @@ public class PlayController {
     public void stopAndRelease(final int nextPage) {
         //playNext 重置bean
         audioInfoBean = null;
+        duration = -1;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -209,6 +218,17 @@ public class PlayController {
         n_muteType(m.getValue());
 
 
+    }
+
+    public void setSpeed(float s) {
+        speed = s;
+        n_setSpeed(speed);
+
+    }
+
+    public void setPitch(float p) {
+        pitch = p;
+        n_setPitch(pitch);
     }
 
     ///////////////////native callback////////////////////////////////////
@@ -283,7 +303,8 @@ public class PlayController {
 
     public native void n_muteType(int muteType);
 
-    public native String getLameVersion();
+    public native void n_setSpeed(float speed);
 
+    public native void n_setPitch(float pitch);
 
 }

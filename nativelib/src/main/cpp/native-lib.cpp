@@ -5,12 +5,14 @@
 #include<jni.h>
 #include "log/AudioLog.h"
 #include "ffmpeg/FFmpegController.h"
-#include "javabridge/JavaBridge.h"
-#include "lame.h"
+#include "bridge/JavaBridge.h"
+#include "status/PlayStatus.h"
 
 JavaBridge *javaBridge = NULL;
 
 FFmpegController *fFmpegController = NULL;
+
+PlayStatus *playStatus = NULL;
 
 _JavaVM *javaVM = NULL;
 
@@ -34,10 +36,10 @@ extern "C"
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *versio) {
     JNIEnv *env;
     javaVM = vm;
-    if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+    if (vm->GetEnv((void **) &env, JNI_VERSION_1_4) != JNI_OK) {
         return -1;
     }
-    return JNI_VERSION_1_6;
+    return JNI_VERSION_1_4;
 }
 
 /**
@@ -48,15 +50,15 @@ JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1prepare(JNIEnv *env, jobject instance, jstring source) {
     //将jstring 转换为const char* 是因为 ffmpeg 打开url的时候传入const char* avformat_open_input();
     const char *url = env->GetStringUTFChars(source, 0);
-    LOG_D("prepare decode :%s", url);
     if (fFmpegController == NULL) {
         if (javaBridge == NULL) {
             javaBridge = new JavaBridge(javaVM, env, &instance);
         }
         javaBridge->onCallLoad(MAIN_THREAD, true);
-        fFmpegController = new FFmpegController(javaBridge, url);
+        playStatus =new PlayStatus();
+        fFmpegController = new FFmpegController(playStatus,javaBridge, url);
         //函数只能调用一次啊 不能反复调用啊 TODO ? why
-        fFmpegController->prepare(url);
+        fFmpegController->prepare();
     }
 
 }
@@ -135,7 +137,6 @@ Java_cn_hash_mm_nativelib_PlayController_n_1duration(JNIEnv *env, jobject instan
 extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1setvolume(JNIEnv *env, jobject instance, jint volume) {
-
     if (fFmpegController != NULL) {
         fFmpegController->setVolume(volume);
     }
@@ -148,12 +149,24 @@ Java_cn_hash_mm_nativelib_PlayController_n_1muteType(JNIEnv *env, jobject instan
         fFmpegController->setMute(muteType);
     }
 
-}extern "C"
-JNIEXPORT jstring JNICALL
-Java_cn_hash_mm_nativelib_PlayController_getLameVersion(JNIEnv *env, jobject instance) {
-
-    // TODO
+}
 
 
-    return env->NewStringUTF(get_lame_version());
+extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1setSpeed(JNIEnv *env, jobject instance, jfloat speed) {
+    if (fFmpegController != NULL) {
+        fFmpegController->setSpeed(speed);
+    }
+
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1setPitch(JNIEnv *env, jobject instance, jfloat pitch) {
+    if (fFmpegController != NULL) {
+        fFmpegController->setPitch(pitch);
+    }
+
 }

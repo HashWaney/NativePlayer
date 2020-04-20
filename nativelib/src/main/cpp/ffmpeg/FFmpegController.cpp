@@ -6,10 +6,12 @@
 #include "FFmpegController.h"
 
 
-FFmpegController::FFmpegController(JavaBridge *javaBridge, const char *url) {
+FFmpegController::FFmpegController(PlayStatus *playStatus, JavaBridge *javaBridge,
+                                   const char *url) {
     this->url = url;
+    this->playStatus = playStatus;
     this->javaBridge = javaBridge;
-    playStatus = new PlayStatus();
+    isDecodeTerminate = false;
     pthread_mutex_init(&decode_lock, NULL);
     pthread_mutex_init(&seek_lock, NULL);
 
@@ -32,9 +34,8 @@ void *prepareCallBack(void *data) {
 }
 
 
-void FFmpegController::prepare(const char *url) {
-    //TODO 在C++里面开启一个子线程读取url信息
-    this->url = url;
+void FFmpegController::prepare() {
+
     pthread_create(&prepareThread, NULL, prepareCallBack, this);
 
 
@@ -48,6 +49,8 @@ int avformat_callback(void *data) {
     return 0;
 
 }
+
+
 
 //2.准备工作（解码操作）
 void FFmpegController::prepareTask() {
@@ -66,8 +69,8 @@ void FFmpegController::prepareTask() {
     avFormatContext = avformat_alloc_context();
 
     //TODO
-//    avFormatContext->interrupt_callback.callback = avformat_callback;
-//    avFormatContext->interrupt_callback.opaque = this;
+    avFormatContext->interrupt_callback.callback = avformat_callback;
+    avFormatContext->interrupt_callback.opaque = this;
 
     //4.打开url地址 读取url信息 &avFormatContext 这个是引用  也就是指向指针的指针
     int errorCode = avformat_open_input(&avFormatContext, url, NULL, NULL);
@@ -88,7 +91,7 @@ void FFmpegController::prepareTask() {
     LOG_D("open input success");
 
     //5.判断读取的媒体信息是否包含流信息
-    if (avformat_find_stream_info(avFormatContext, NULL)) {
+    if (avformat_find_stream_info(avFormatContext, NULL)<0) {
         LOG_E("can not find streams from %s", url);
         if (javaBridge != NULL) {
             javaBridge->onCallErrMessage(TASK_THREAD, 1002, "can not find streams from url");;
@@ -208,9 +211,7 @@ void FFmpegController::startPlay() {
         AVPacket *avPacket = av_packet_alloc();
         //TODO 解码过程就是从AvFrameContext中获取被压缩的数据包AVPacket，因此可以把这些数据包存入到队列中，完成边解码边播放的功能
 
-        pthread_mutex_lock(&decode_lock);
         int ret = av_read_frame(avFormatContext, avPacket);
-        pthread_mutex_unlock(&decode_lock);
         if (ret == 0) {
 
             //注意AVFormatContext中包含了多个流信息，每个流信息在AVMediaType中去匹配，比如音频AUDIO 视频VIDEO ，所以在这里比对角标是很有必要的。
@@ -341,7 +342,10 @@ void FFmpegController::seek(uint64_t second) {
             int64_t realtime = second * AV_TIME_BASE;
             int seek_result = avformat_seek_file(avFormatContext, -1,
                                                  INT64_MIN, realtime, INT64_MAX, 0);
-            LOG_E("seek_result %d：", seek_result);
+            char buffer[1024] = {0};
+
+            av_strerror(seek_result, buffer, sizeof(buffer));
+            LOG_E("seek_result %d： %s", seek_result, buffer);
             if (seek_result < 0) {
                 audioController->javaBridge->onCallErrMessage(TASK_THREAD, 1006,
                                                               "error to seek the file");
@@ -368,4 +372,17 @@ void FFmpegController::setMute(int muteType) {
     if (audioController != NULL) {
         audioController->setMuteType(muteType);
     }
+}
+
+void FFmpegController::setPitch(float pitch) {
+    if (audioController != NULL) {
+        audioController->setPitch(pitch);
+    }
+}
+
+void FFmpegController::setSpeed(float speed) {
+    if (audioController != NULL) {
+        audioController->setSpeed(speed);
+    }
+
 }

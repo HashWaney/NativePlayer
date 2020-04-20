@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -41,11 +40,12 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     private PlayController playController;
     private boolean isPlaying = false;
     private TextView tvPlayTime, tvVolume;
-    protected boolean isSeekPosition;
+    protected boolean isSeekPosition = false;
     private int currentPosition = 0;
     private AppCompatSeekBar volumeSeekBar, positionSeekBar;
 
     private AudioManager audioManager;
+
 
     private static final int defaultVolume = 40;
 
@@ -75,9 +75,10 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     };
 
 
-    private String url = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "fyjili.mp3";
+    private String net_url = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "fyjili.mp3";
 
-    private String net_url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
+    private String url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
+    private String broadcast_url = "http://ngcdn004.cnr.cn/live/dszs/index12.m3u8";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -91,6 +92,12 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
 
         playController = new PlayController();
+        playController.setVolume(defaultVolume);
+        playController.setMuteType(MuteType.MUTE_TYPE_CENTER);
+        playController.setPitch(1.0f);
+        playController.setSpeed(1.0f);
+        volumeSeekBar.setProgress(playController.getVolume());
+        tvVolume.setText("音量：" + playController.getVolume());
         playController.setOnPauseResumeListener(this);
         playController.setOnPlayCompleteListener(this);
         playController.setOnPlayLoadListener(this);
@@ -101,27 +108,8 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         positionSeekBar.setOnSeekBarChangeListener(this);
 
 
-        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        LogUtil.logD("当前系统音量：" + volume +" lame version:"+playController.getLameVersion());
-
-        tvVolume.setText(String.format("音量: %d", volume));
-        playController.setVolume(volume);
-        volumeSeekBar.setProgress(volume);
-
-
-
-
     }
 
-
-    public int getStreamVolume() {
-        return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-    }
-
-    public void setStreamVolume(int volume) {
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, AudioManager.ADJUST_MUTE);
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -199,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
             // TODO: 2020-04-16
             playController.setVolume(progress);
             tvVolume.setText("音量:" + playController.getVolume());
-            setStreamVolume(progress);
+
 
         }
 
@@ -219,8 +207,8 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     public void onStopTrackingTouch(SeekBar seekBar) {
         LogUtil.logD("stop touch");
         if (seekBar.getId() == R.id.position_seek) {
-            isSeekPosition = false;
             playController.seek(currentPosition);
+            isSeekPosition = false;
         }
 
     }
@@ -241,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
             isPlaying = false;
             //auto play next after the music is complete .
 
-            playController.playNext(net_url);
+            playController.playNext(broadcast_url);
             volumeSeekBar.setProgress(playController.getVolume());
 
         }
@@ -265,47 +253,6 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                addMediaVolume(getStreamVolume());
-                return true;
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                cutMediaVolume(getStreamVolume());
-                return true;
-            default:
-                break;
-        }
-
-
-        return super.onKeyDown(keyCode, event);
-
-    }
-
-    private void addMediaVolume(int current) {
-        currentVolume = current + stepVolume;
-        if (currentVolume > getMaxVolume()) {
-            currentVolume = getMaxVolume();
-        }
-        setStreamVolume(currentVolume);
-        playController.setVolume(currentVolume);
-        volumeSeekBar.setProgress(playController.getVolume());
-
-    }
-
-    private void cutMediaVolume(int current) {
-        currentVolume = current - stepVolume;
-        if (currentVolume < 0) {
-            currentVolume = 0;
-        }
-        setStreamVolume(currentVolume);
-        playController.setVolume(currentVolume);
-        volumeSeekBar.setProgress(playController.getVolume());
-
-
-    }
-
     public int getMaxVolume() {
         return audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
     }
@@ -323,14 +270,23 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
     public void normal(View view) {
+        playController.setSpeed(1.0f);
+        playController.setPitch(1.0f);
     }
 
     public void pitchAndspeed(View view) {
+        playController.setPitch(1.5f);
+        playController.setPitch(1.5f);
     }
 
     public void pitch(View view) {
+        playController.setPitch(1.5f);
+        playController.setSpeed(1.0f);
+
     }
 
     public void speed(View view) {
+        playController.setSpeed(1.5f);
+        playController.setPitch(1.0f);
     }
 }

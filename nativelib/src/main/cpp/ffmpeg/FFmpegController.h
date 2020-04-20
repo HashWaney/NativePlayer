@@ -12,15 +12,15 @@
 #include "pthread.h"
 #include "../log/AudioLog.h"
 #include "../audio/AudioController.h"
-#include "../javabridge/JavaBridge.h"
+#include "../bridge/JavaBridge.h"
 #include "../status/PlayStatus.h"
-#include "time.h"
+
 
 extern "C"
 {
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
-#include "libavutil/time.h"
+#include <libavutil/time.h>
 };
 
 class FFmpegController {
@@ -52,11 +52,11 @@ public:
 
 
 public:
-    FFmpegController(JavaBridge *javaBridge, const char *url);
+    FFmpegController(PlayStatus *playStatus, JavaBridge *javaBridge, const char *url);
 
     ~FFmpegController();
 
-    void prepare(const char *url);
+    void prepare();
 
     void prepareTask();
 
@@ -73,6 +73,10 @@ public:
     void setVolume(int volume);
 
     void setMute(int muteType);
+
+    void setPitch(float pitch);
+
+    void setSpeed(float speed);
 
 
 };

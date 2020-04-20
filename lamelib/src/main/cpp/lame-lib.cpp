@@ -3,7 +3,7 @@
  */
 
 #include "jni.h"
-#include "libmp3lame/lame.h"
+#include "lame.h"
 
 extern "C"
 JNIEXPORT jstring
