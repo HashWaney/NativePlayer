@@ -168,5 +168,10 @@
             android:textAllCaps="false" />
 
     </LinearLayout>
+    <Button
+        android:layout_width="match_parent"
+        android:text="开始录制"
+        android:onClick="startRecord"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
