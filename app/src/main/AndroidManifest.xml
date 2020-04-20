@@ -5,6 +5,7 @@
     <!--权限 读取sdcard-->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!--网络读取-->
     <uses-permission android:name="android.permission.INTERNET" />

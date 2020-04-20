@@ -127,6 +127,8 @@ public:
 
     void setSpeed(float speed);
 
+    int getAudioDb(char *pcmData, size_t d);
+
 };
 
 

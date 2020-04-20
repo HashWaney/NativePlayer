@@ -23,6 +23,7 @@ import cn.hash.mm.audioplayer.util.PermissionUtil;
 import cn.hash.mm.nativelib.PlayController;
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.bean.MuteType;
+import cn.hash.mm.nativelib.listener.OnCurrentAudioDbListener;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
 import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
@@ -36,11 +37,11 @@ import cn.hash.mm.nativelib.util.TimeUtil;
  */
 
 
-public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener, OnPlayLoadListener, OnPlayCompleteListener, OnPrepareListener {
+public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener, OnPlayLoadListener, OnPlayCompleteListener, OnPrepareListener, OnCurrentAudioDbListener {
 
     private PlayController playController;
     private boolean isPlaying = false;
-    private TextView tvPlayTime, tvVolume;
+    private TextView tvPlayTime, tvVolume, tvDb;
     protected boolean isSeekPosition = false;
     private int currentPosition = 0;
     private AppCompatSeekBar volumeSeekBar, positionSeekBar;
@@ -89,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         tvPlayTime = findViewById(R.id.tvPlayTime);
         tvVolume = findViewById(R.id.tvVolume);
         volumeSeekBar = findViewById(R.id.volume_seek);
+        tvDb = findViewById(R.id.tvDb);
         positionSeekBar = findViewById(R.id.position_seek);
 
 
@@ -105,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         playController.setTimeInfoListener(this);
         playController.setOnPlayErrorListener(this);
         playController.setOnPrepareListener(this);
+        playController.setOnCurrentAudioDbListener(this);
         volumeSeekBar.setOnSeekBarChangeListener(this);
         positionSeekBar.setOnSeekBarChangeListener(this);
 
@@ -260,10 +263,6 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     }
 
 
-    public int getMaxVolume() {
-        return audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-    }
-
     public void left(View view) {
         playController.setMuteType(MuteType.MUTE_TYPE_LEFT);
     }
@@ -295,5 +294,15 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     public void speed(View view) {
         playController.setSpeed(1.5f);
         playController.setPitch(1.0f);
+    }
+
+    @Override
+    public void setCurrentDb(final int db) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tvDb.setText("分贝值:" + db);
+            }
+        });
     }
 }

@@ -43,8 +43,11 @@ void pcmPlayBufferQueueCallBack(SLAndroidSimpleBufferQueueItf bf, void *context)
                 //回调应用层
                 wlAudio->javaBridge->onCallTimeInfo(TASK_THREAD, wlAudio->clock, wlAudio->duration);
             }
-//            wlAudio->callJava->onCallValumeDB(CHILD_THREAD,
-////            wlAudio->getPCMDB(reinterpret_cast<char *>(wlAudio->sampleBuffer), buffersize * 4));
+            //回调当前处理的音量的分贝值
+            wlAudio->javaBridge->onCallVolumeDb(TASK_THREAD, wlAudio->getAudioDb(
+                    reinterpret_cast<char *>(wlAudio->sound_touch_out_buffer), buffersize * 4));
+
+            //将缓冲区的数据加入到播放队列中。
             (*wlAudio->androidSimpleBufferQueueItf)->Enqueue(wlAudio->androidSimpleBufferQueueItf,
                                                              (char *) wlAudio->sound_touch_out_buffer,
                                                              buffersize * 2 * 2);
@@ -459,20 +462,20 @@ void AudioController::setSpeed(float speed) {
     }
 }
 //
-//int AudioController::getPCMDB(char *pcmcata, size_t pcmsize) {
-//    int db = 0;
-//    short int pervalue = 0;
-//    double sum = 0;
-//    for(int i = 0; i < pcmsize; i+= 2)
-//    {
-//        memcpy(&pervalue, pcmcata+i, 2);
-//        sum += abs(pervalue);
-//    }
-//    sum = sum / (pcmsize / 2);
-//    if(sum > 0)
-//    {
-//        db = (int)20.0 *log10(sum);
-//    }
-//    return db;
-//}
+int AudioController::getAudioDb(char *pcmData, size_t d) {
+    int db = 0;
+    short int pervalue = 0;
+    double sum = 0;
+    for(int i = 0; i < d; i+= 2)
+    {
+        memcpy(&pervalue, pcmData+i, 2);
+        sum += abs(pervalue);
+    }
+    sum = sum / (d / 2);
+    if(sum > 0)
+    {
+        db = (int)20.0 *log10(sum);
+    }
+    return db;
+}
 

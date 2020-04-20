@@ -5,6 +5,7 @@ import android.util.Log;
 
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.bean.MuteType;
+import cn.hash.mm.nativelib.listener.OnCurrentAudioDbListener;
 import cn.hash.mm.nativelib.listener.OnPauseResumeListener;
 import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
@@ -33,6 +34,8 @@ public class PlayController {
 
     private OnPlayCompleteListener onPlayCompleteListener;
 
+    private OnCurrentAudioDbListener dbListener;
+
     private static boolean playNext = false;
 
     private static int duration = -1;
@@ -42,6 +45,7 @@ public class PlayController {
     private static float pitch = 1.0f;
     private static float speed = 1.0f;
 
+    private static int db = 0;
     private static MuteType muteType = MuteType.MUTE_TYPE_CENTER;
 
 
@@ -94,6 +98,11 @@ public class PlayController {
 
     public void setOnPlayCompleteListener(OnPlayCompleteListener onPlayCompleteListener) {
         this.onPlayCompleteListener = onPlayCompleteListener;
+    }
+
+
+    public void setOnCurrentAudioDbListener(OnCurrentAudioDbListener dbListener) {
+        this.dbListener = dbListener;
     }
 
     public PlayController() {
@@ -164,6 +173,7 @@ public class PlayController {
         //playNext 重置bean
         audioInfoBean = null;
         duration = -1;
+        db = 0;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -274,10 +284,19 @@ public class PlayController {
         }
     }
 
+    //获取当前db值
+    public void callDbFromNative(int audioDb) {
+        db = audioDb;
+        if (dbListener != null) {
+            dbListener.setCurrentDb(db);
+        }
+    }
+
 
     public void errMessageFromNative(int errorCode, String errorMessage) {
         // TODO: 2020-04-16  播放出错 回收资源
         stopAndRelease(-1);
+
         if (onPlayErrorListener != null) {
             onPlayErrorListener.onError(errorCode, errorMessage);
         }

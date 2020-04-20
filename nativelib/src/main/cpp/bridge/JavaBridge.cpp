@@ -23,6 +23,8 @@ JavaBridge::JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj) {
 
     method_load = env->GetMethodID(java_clazz, "callLoadFromNative", "(Z)V");
     method_complete = env->GetMethodID(java_clazz, "callCompleteFromNative", "(Z)V");
+    method_db = env->GetMethodID(java_clazz, "callDbFromNative", "(I)V");
+
 }
 
 JavaBridge::~JavaBridge() {
@@ -111,6 +113,23 @@ void JavaBridge::onCallComplete(int type, bool isComplete) {
         jniEnv->CallVoidMethod(instance, method_complete, isComplete);
         vm->DetachCurrentThread();
 
+    }
+
+}
+
+void JavaBridge::onCallVolumeDb(int type, int db) {
+    if (type == MAIN_THREAD) {
+        env->CallVoidMethod(instance, method_db, db);
+
+    } else {
+        JNIEnv *jniEnv;
+        if (vm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+            return;
+        }
+        jniEnv->CallVoidMethod(instance, method_db, db);
+
+
+        vm->DetachCurrentThread();
     }
 
 }
