@@ -22,6 +22,7 @@ import cn.hash.mm.nativelib.listener.OnPrepareListener;
 import cn.hash.mm.nativelib.listener.OnRecordAudioTimeListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
 import cn.hash.mm.nativelib.util.NativeLibLogUtil;
+import cn.hash.mm.nativelib.util.ThreadPool;
 
 /**
  * Created by Hash on 2020-04-13.
@@ -147,6 +148,14 @@ public class PlayController {
             }
         }).start();
 
+//
+//        ThreadPool.execute(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//            }
+//        });
+
 
     }
 
@@ -162,6 +171,7 @@ public class PlayController {
                 setMuteType(muteType);
                 setSpeed(speed);
                 setPitch(pitch);
+                Log.d(TAG, "start play url:" + resource);
                 n_startPlay();
             }
         }).start();
@@ -189,7 +199,7 @@ public class PlayController {
 
 
     //5.停止
-    public void stopAndRelease(final int nextPage) {
+    public void stopAndRelease() {
         //playNext 重置bean
         audioInfoBean = null;
         duration = -1;
@@ -197,7 +207,7 @@ public class PlayController {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                n_stop(nextPage);
+                n_stop();
             }
         }).start();
 
@@ -215,7 +225,7 @@ public class PlayController {
         resource = url;
         playNext = true;
         //释放当前资源
-        stopAndRelease(1);
+        stopAndRelease();
 
     }
 
@@ -472,6 +482,7 @@ public class PlayController {
 
     public void callCompleteFromNative(boolean isComplete) {
         // TODO: 2020-04-16 播放完成 回收资源
+        stopAndRelease();
         if (onPlayCompleteListener != null) {
             onPlayCompleteListener.complete(isComplete);
         }
@@ -479,7 +490,7 @@ public class PlayController {
 
 
     public void callNextAfterInvokeN_Stop() {
-        Log.d(TAG,"callNextAfter");
+        Log.d(TAG, "callNextAfter: " + playNext);
         if (playNext) {
             playNext = false;
             prepare();
@@ -509,7 +520,7 @@ public class PlayController {
     //错误回调
     public void errMessageFromNative(int errorCode, String errorMessage) {
         // TODO: 2020-04-16  播放出错 回收资源
-        stopAndRelease(-1);
+        stopAndRelease();
 
         if (onPlayErrorListener != null) {
             onPlayErrorListener.onError(errorCode, errorMessage);
@@ -617,7 +628,7 @@ public class PlayController {
 
     public native void n_resume();
 
-    public native void n_stop(int nextPage);
+    public native void n_stop();
 
     public native void n_seek(int seconds);
 

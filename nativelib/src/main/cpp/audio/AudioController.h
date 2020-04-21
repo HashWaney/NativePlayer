@@ -19,6 +19,7 @@ extern "C"
 {
 #include "libavcodec/avcodec.h"
 #include "SLES/OpenSLES.h"
+#include "libavutil/time.h"
 #include "SLES/OpenSLES_Android.h"
 #include "libswresample/swresample.h"
 };
@@ -105,6 +106,9 @@ public:
     PcmSplitQueue *pcmSplitQueue = NULL;
 
     int defaultSize = 4096;
+
+
+    bool readFrameFinished = true;// 是否已经读取完了frame
 
 
 public:

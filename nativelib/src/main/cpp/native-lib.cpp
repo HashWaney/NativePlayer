@@ -14,9 +14,9 @@ FFmpegController *fFmpegController = NULL;
 
 PlayStatus *playStatus = NULL;
 
-JavaVM *javaVM = NULL;
+_JavaVM *javaVM = NULL;
 
-int isExit = 0;
+bool isExit = true;
 
 pthread_t thread_StartPlay;
 
@@ -57,7 +57,7 @@ Java_cn_hash_mm_nativelib_PlayController_n_1prepare(JNIEnv *env, jobject instanc
         javaBridge->onCallLoad(MAIN_THREAD, true);
         playStatus = new PlayStatus();
         fFmpegController = new FFmpegController(playStatus, javaBridge, url);
-        //函数只能调用一次啊 不能反复调用啊 TODO ? why
+        //函数只能调用一次啊 不能反复调用啊
         fFmpegController->prepare();
     }
 
@@ -100,12 +100,12 @@ Java_cn_hash_mm_nativelib_PlayController_n_1resume(JNIEnv *env, jobject instance
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance, jint nextPage) {
+Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance) {
     LOG_E("current exit %d", isExit);
-    if (isExit != 0) {
+    if (!isExit) {
         return;
     }
-    isExit = 1;
+    isExit = true;
     jclass j_clazz = env->GetObjectClass(instance);
     jmethodID method_next = env->GetMethodID(j_clazz, "callNextAfterInvokeN_Stop", "()V");
     if (fFmpegController != NULL) {
@@ -120,12 +120,9 @@ Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance, 
             javaBridge = NULL;
         }
     }
-    isExit = 0;
-    //TODO 说明是播放下一首。
-    if (nextPage != -1) {
-        LOG_D("next page");
-        env->CallVoidMethod(instance, method_next);
-    }
+    isExit = false;
+    env->CallVoidMethod(instance, method_next);
+
 
 }
 

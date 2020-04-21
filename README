@@ -122,3 +122,7 @@
 
 
 
+-4.21 完善SDK ：
+        1.seek功能有一个过渡缓冲
+        2.avPacket 对应多个avFrame ,avPacket 比较少，直接解码完了，不进行播放
+          设置变量，avcodec_send_packet() avcodec_receive_frame()会执行多次，但是

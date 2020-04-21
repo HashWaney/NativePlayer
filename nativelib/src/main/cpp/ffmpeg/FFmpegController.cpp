@@ -188,6 +188,9 @@ void FFmpegController::prepareTask() {
 
 }
 
+/**
+ * 执行播放数据的解码
+ */
 void FFmpegController::startPlay() {
     if (audioController == NULL) {
         return;
@@ -199,17 +202,23 @@ void FFmpegController::startPlay() {
     while (playStatus != NULL && !playStatus->exit) {
 
         if (playStatus->seekByUser) {
+            //降低CPU使用率
+            av_usleep(1000 * 100); //微秒 10^(-6)次方
             continue;
         }
 
         //TODO seek 保证队列中有值
         if (audioController->bufferQueue->getQueueSize() > 40) {
+
+            // 降低CPU使用率
+            av_usleep(1000 * 100);
             continue;
         }
 
         AVPacket *avPacket = av_packet_alloc();
-        //TODO 解码过程就是从AvFrameContext中获取被压缩的数据包AVPacket，因此可以把这些数据包存入到队列中，完成边解码边播放的功能
-
+        //TODO 解码过程就是从AvFrameContext中获取被压缩的数据包AVPacket，
+        // 因此可以把这些数据包存入到队列中，完成边解码边播放的功能
+        // 后续就是通过AudioController中的OpenSl Es进行播放操作。
         int ret = av_read_frame(avFormatContext, avPacket);
         if (ret == 0) {
 
@@ -217,7 +226,7 @@ void FFmpegController::startPlay() {
             //Question：如何知道av_read_frame(avFormatContext,avPacket)读取的packet是属于哪个流的数据包呢，
             //Answer: 我们通过在AVFormatContext,遍历所有的流信息，然后根据AVMediaType匹配是否为对应的流，然后记下各自流的角标，因此在从AVFormatContext读取的时候就可以对应的上了。
             if (avPacket->stream_index == audioController->streamIndex) {
-
+                //把数据加载到队列中以便完成解码功能进行播放。
                 audioController->bufferQueue->putPacketToQueue(avPacket);
             } else {
                 av_packet_free(&avPacket);
@@ -230,6 +239,9 @@ void FFmpegController::startPlay() {
             av_free(avPacket);
             while (playStatus != NULL && !playStatus->exit) {
                 if (audioController->bufferQueue->getQueueSize() > 0) {
+                    LOG_D("buffer queue size %d ", audioController->bufferQueue->getQueueSize());
+                    //降低CPU使用率
+                    av_usleep(1000 * 100);
                     continue;
                 } else {
                     playStatus->exit = true;
@@ -339,6 +351,9 @@ void FFmpegController::seek(uint64_t second) {
             pthread_mutex_lock(&seek_lock);
             //seek the file
             int64_t realtime = second * AV_TIME_BASE;
+
+            // seek过程中 刷新缓冲 以免重复播放
+            avcodec_flush_buffers(audioController->avCodecContext);
             int seek_result = avformat_seek_file(avFormatContext, -1,
                                                  INT64_MIN, realtime, INT64_MAX, 0);
             char buffer[1024] = {0};

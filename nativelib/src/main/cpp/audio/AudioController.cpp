@@ -1,5 +1,5 @@
 //
-// Created by yangw on 2018-2-28.
+//Created by Hash 2020.4.21
 //
 
 #include "AudioController.h"
@@ -89,7 +89,7 @@ void *pcmToAACBufferCallBack(void *data) {
                        pack_split_left_num);
 
                 //回调给Java 余下的数据块
-                if(audioController->record){
+                if (audioController->record) {
                     audioController->javaBridge->onCallPcmToAAC(TASK_THREAD, pack_split_left_num,
                                                                 buffer);
                 }
@@ -197,8 +197,10 @@ void AudioController::initOpenSLES() {
 
 
     //SL_IID_PLAYBACKRATE 该属性是自动调整采样率，高采样率 切换到低采样率 会明显的卡顿，opensl es 使用该属性自动转换
-    const SLInterfaceID slInterfaceID[4] = {SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_PLAYBACKRATE,SL_IID_MUTESOLO};
-    const SLboolean requestPlayInter[4] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE};
+    const SLInterfaceID slInterfaceID[4] = {SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_PLAYBACKRATE,
+                                            SL_IID_MUTESOLO};
+    const SLboolean requestPlayInter[4] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
+                                           SL_BOOLEAN_TRUE};
 
     (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &slDataSource, &audioSnk, 3,
                                     slInterfaceID, requestPlayInter);
@@ -278,6 +280,10 @@ int AudioController::resampleAudio(void **pcmbuf) {
     while (playStatus != NULL && !playStatus->exit) {
 
         if (playStatus->seekByUser) {
+
+            //降低CPU 使用率
+            av_usleep(1000 * 100);
+
             continue;
         }
         if (bufferQueue->getQueueSize() == 0)//加载中
@@ -286,6 +292,7 @@ int AudioController::resampleAudio(void **pcmbuf) {
                 playStatus->isLoad = true;
                 javaBridge->onCallLoad(TASK_THREAD, true);
             }
+            av_usleep(1000 * 100);
             continue;
         } else {
             if (playStatus->isLoad) {
@@ -293,24 +300,36 @@ int AudioController::resampleAudio(void **pcmbuf) {
                 javaBridge->onCallLoad(TASK_THREAD, false);
             }
         }
-        avPacket = av_packet_alloc();
-        if (bufferQueue->getPacketFromQueue(avPacket) != 0) {
-            av_packet_free(&avPacket);
-            av_free(avPacket);
-            avPacket = NULL;
-            continue;
+
+
+        if (readFrameFinished) {
+            //TODO 设置该变量，就是为了解码一帧avPacket 对应 一帧avFrame。
+            avPacket = av_packet_alloc();
+            if (bufferQueue->getPacketFromQueue(avPacket) != 0) {
+                av_packet_free(&avPacket);
+                av_free(avPacket);
+                avPacket = NULL;
+                continue;
+            }
+
+            codecOperateFlag = avcodec_send_packet(avCodecContext, avPacket);
+            if (codecOperateFlag != 0) {
+                av_packet_free(&avPacket);
+                av_free(avPacket);
+                avPacket = NULL;
+                continue;
+            }
+
         }
-        codecOperateFlag = avcodec_send_packet(avCodecContext, avPacket);
-        if (codecOperateFlag != 0) {
-            av_packet_free(&avPacket);
-            av_free(avPacket);
-            avPacket = NULL;
-            continue;
-        }
+
+
+
+        //TODO 将avPacket 转换为 avFrame 才是真正意义上的解码功能。 通过avcodec功能完成解码
+
         avFrame = av_frame_alloc();
         codecOperateFlag = avcodec_receive_frame(avCodecContext, avFrame);
         if (codecOperateFlag == 0) {
-
+            readFrameFinished = false;
             if (avFrame->channels && avFrame->channel_layout == 0) {
                 avFrame->channel_layout = av_get_default_channel_layout(avFrame->channels);
             } else if (avFrame->channels == 0 && avFrame->channel_layout > 0) {
@@ -336,6 +355,7 @@ int AudioController::resampleAudio(void **pcmbuf) {
                 av_free(avFrame);
                 avFrame = NULL;
                 swr_free(&swr_ctx);
+                readFrameFinished = true;
                 continue;
             }
 
@@ -365,6 +385,7 @@ int AudioController::resampleAudio(void **pcmbuf) {
             swr_free(&swr_ctx);
             break;
         } else {
+            readFrameFinished = true;
             av_packet_free(&avPacket);
             av_free(avPacket);
             avPacket = NULL;
@@ -411,6 +432,8 @@ void AudioController::release() {
         playObj = NULL;
         playItf = NULL;
         androidSimpleBufferQueueItf = NULL;
+        muteSoloItf = NULL;
+        pcmVolumePlay = NULL;
     }
 
     if (outputMixObj != NULL) {
@@ -428,6 +451,21 @@ void AudioController::release() {
     if (receiveDataFromFrameBuffer != NULL) {
         free(receiveDataFromFrameBuffer);
         receiveDataFromFrameBuffer = NULL;
+    }
+
+    if (out_buffer != NULL) {
+        out_buffer = NULL;
+    }
+
+    if (soundTouch != NULL) {
+        delete soundTouch;
+        soundTouch = NULL;
+    }
+
+    if(sound_touch_out_buffer!=NULL)
+    {
+        free(sound_touch_out_buffer);
+        sound_touch_out_buffer=NULL;
     }
 
     if (avCodecContext != NULL) {

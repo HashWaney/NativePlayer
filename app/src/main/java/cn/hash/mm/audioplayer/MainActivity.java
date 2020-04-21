@@ -82,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
 
     private String url = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "fyjili.mp3";
+//    private String url = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "林俊杰+-+背对背拥抱.ape";
 
     private String net_url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
     private String broadcast_url = "http://ngcdn004.cnr.cn/live/dszs/index.m3u8";
@@ -159,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
     public void stop(View view) {
 
-        playController.stopAndRelease(-1);
+        playController.stopAndRelease();
     }
 
 
