@@ -63,6 +63,7 @@ Java_cn_hash_mm_nativelib_PlayController_n_1prepare(JNIEnv *env, jobject instanc
 
 }
 
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1startPlay(JNIEnv *env, jobject instance) {
@@ -72,7 +73,10 @@ Java_cn_hash_mm_nativelib_PlayController_n_1startPlay(JNIEnv *env, jobject insta
         pthread_create(&thread_StartPlay, NULL, startToPlay, fFmpegController);
     }
 
-}extern "C"
+}
+
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1pause(JNIEnv *env, jobject instance) {
     LOG_D("pause play");
@@ -82,7 +86,9 @@ Java_cn_hash_mm_nativelib_PlayController_n_1pause(JNIEnv *env, jobject instance)
     }
 
 
-}extern "C"
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1resume(JNIEnv *env, jobject instance) {
     LOG_D("resume play");
@@ -90,7 +96,9 @@ Java_cn_hash_mm_nativelib_PlayController_n_1resume(JNIEnv *env, jobject instance
         fFmpegController->resumePlay();
     }
 
-}extern "C"
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance, jint nextPage) {
     LOG_E("current exit %d", isExit);
@@ -115,10 +123,13 @@ Java_cn_hash_mm_nativelib_PlayController_n_1stop(JNIEnv *env, jobject instance, 
     isExit = 0;
     //TODO 说明是播放下一首。
     if (nextPage != -1) {
+        LOG_D("next page");
         env->CallVoidMethod(instance, method_next);
     }
 
-}extern "C"
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1seek(JNIEnv *env, jobject instance, jint seconds) {
 
@@ -126,14 +137,20 @@ Java_cn_hash_mm_nativelib_PlayController_n_1seek(JNIEnv *env, jobject instance, 
         fFmpegController->seek(seconds);
     }
 
-}extern "C"
+}
+
+
+extern "C"
 JNIEXPORT jint JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1duration(JNIEnv *env, jobject instance) {
     if (fFmpegController != NULL) {
         return fFmpegController->duration;
     }
+    return 0;
 
 }
+
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1setvolume(JNIEnv *env, jobject instance, jint volume) {
@@ -141,7 +158,10 @@ Java_cn_hash_mm_nativelib_PlayController_n_1setvolume(JNIEnv *env, jobject insta
         fFmpegController->setVolume(volume);
     }
 
-}extern "C"
+}
+
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1muteType(JNIEnv *env, jobject instance, jint muteType) {
 
@@ -179,7 +199,11 @@ Java_cn_hash_mm_nativelib_PlayController_n_1getSampleRate(JNIEnv *env, jobject i
     }
 
     return 0;
-}extern "C"
+}
+
+
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1startRecord(JNIEnv *env, jobject instance,
                                                         jboolean record) {
@@ -188,7 +212,10 @@ Java_cn_hash_mm_nativelib_PlayController_n_1startRecord(JNIEnv *env, jobject ins
         fFmpegController->startRecord(record);
     }
 
-}extern "C"
+}
+
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1stopRecord(JNIEnv *env, jobject instance,
                                                        jboolean record) {
@@ -198,7 +225,10 @@ Java_cn_hash_mm_nativelib_PlayController_n_1stopRecord(JNIEnv *env, jobject inst
     }
 
 
-}extern "C"
+}
+
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1pauseRecord(JNIEnv *env, jobject instance,
                                                         jboolean record) {
@@ -207,7 +237,10 @@ Java_cn_hash_mm_nativelib_PlayController_n_1pauseRecord(JNIEnv *env, jobject ins
         fFmpegController->pauseRecord(record);
     }
 
-}extern "C"
+}
+
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1resumeRecord(JNIEnv *env, jobject instance,
                                                          jboolean record) {

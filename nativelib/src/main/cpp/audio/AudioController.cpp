@@ -196,8 +196,9 @@ void AudioController::initOpenSLES() {
     SLDataSource slDataSource = {&android_queue, &pcm};
 
 
-    const SLInterfaceID slInterfaceID[3] = {SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_MUTESOLO};
-    const SLboolean requestPlayInter[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
+    //SL_IID_PLAYBACKRATE 该属性是自动调整采样率，高采样率 切换到低采样率 会明显的卡顿，opensl es 使用该属性自动转换
+    const SLInterfaceID slInterfaceID[4] = {SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_PLAYBACKRATE,SL_IID_MUTESOLO};
+    const SLboolean requestPlayInter[4] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE};
 
     (*engineItf)->CreateAudioPlayer(engineItf, &playObj, &slDataSource, &audioSnk, 3,
                                     slInterfaceID, requestPlayInter);

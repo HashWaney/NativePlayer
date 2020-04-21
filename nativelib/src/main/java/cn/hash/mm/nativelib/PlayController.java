@@ -19,6 +19,7 @@ import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
 import cn.hash.mm.nativelib.listener.OnPlayLoadListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
+import cn.hash.mm.nativelib.listener.OnRecordAudioTimeListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
 import cn.hash.mm.nativelib.util.NativeLibLogUtil;
 
@@ -45,20 +46,24 @@ public class PlayController {
 
     private OnCurrentAudioDbListener dbListener;
 
-    private static boolean playNext = false;
+    private OnRecordAudioTimeListener onRecordAudioTimeListener;
 
-    private static int duration = -1;
+    private static boolean playNext = false; //播放下一首标志位
+
+    private static int duration = -1; //音频播放总时长
 
     private static int current_volume = 40;
 
     private static float pitch = 1.0f;
     private static float speed = 1.0f;
 
-    private static boolean isStartRecord = false;
+    private static boolean isStartRecord = false; //开启录制标志位
 
-    private static boolean initMediaCodec = false;
+    private static boolean initMediaCodec = false; //mediaCodec初始化标志位
 
-    private static int audioSampleRate = 0;
+    private static int audioSampleRate = 0;//采样率
+
+    private static double recordTime = 0; //录制时间
 
     private static int db = 0;
     private static MuteType muteType = MuteType.MUTE_TYPE_CENTER;
@@ -80,7 +85,6 @@ public class PlayController {
     private static String resource;
 
     private static AudioInfoBean audioInfoBean = null;
-
 
 
     public void setResource(String resource) {
@@ -115,6 +119,10 @@ public class PlayController {
 
     public void setOnCurrentAudioDbListener(OnCurrentAudioDbListener dbListener) {
         this.dbListener = dbListener;
+    }
+
+    public void setOnRecordAudioTimeListener(OnRecordAudioTimeListener onRecordAudioTimeListener) {
+        this.onRecordAudioTimeListener = onRecordAudioTimeListener;
     }
 
     public PlayController() {
@@ -275,7 +283,7 @@ public class PlayController {
     public void pauseRecord(boolean record) {
         isStartRecord = record;
         n_pauseRecord(isStartRecord);
-        Log.d(TAG, "暂停录制:"+isStartRecord);
+        Log.d(TAG, "暂停录制:" + isStartRecord);
 
 
     }
@@ -290,6 +298,8 @@ public class PlayController {
         if (initMediaCodec) {
             isStartRecord = record;
             n_stopRecord(isStartRecord);
+
+
             releaseMediaCodec();
             Log.d(TAG, "完成录制");
         }
@@ -298,36 +308,43 @@ public class PlayController {
     }
 
     private void releaseMediaCodec() {
-        if (encoder == null) {
-            return;
-        }
-
-        try {
-            outputStream.close();
-            outputStream = null;
-
-            encoder.stop();
-            encoder.release();
-            encoder = null;
-            bufferInfo = null;
-            encodeFormat = null;
-            initMediaCodec = false;
-            Log.d(TAG, "释放资源");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (outputStream != null) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (encoder == null) {
+                    return;
+                }
                 try {
+
+                    //延迟销毁数据
+                    Thread.sleep(1000);
                     outputStream.close();
+                    outputStream = null;
+                    recordTime = 0;
+                    encoder.stop();
+                    encoder.release();
+                    encoder = null;
+                    bufferInfo = null;
+                    encodeFormat = null;
+                    initMediaCodec = false;
+                    Log.d(TAG, "释放资源");
+
                 } catch (Exception e) {
                     e.printStackTrace();
+                } finally {
+                    if (outputStream != null) {
+                        try {
+                            outputStream.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+
+                        }
+                        outputStream = null;
+                    }
 
                 }
-                outputStream = null;
             }
-
-        }
+        }).start();
 
 
     }
@@ -462,6 +479,7 @@ public class PlayController {
 
 
     public void callNextAfterInvokeN_Stop() {
+        Log.d(TAG,"callNextAfter");
         if (playNext) {
             playNext = false;
             prepare();
@@ -505,46 +523,64 @@ public class PlayController {
      * @param size        音频帧的大小
      * @param inputBuffer 音频帧的输入字节数据
      */
-    public void encodePcmToAAC(int size, byte[] inputBuffer) {
-        if (inputBuffer != null && encoder != null) {
-            int inputBufferIndex = encoder.dequeueInputBuffer(-1);
-            if (inputBufferIndex >= 0) {
-                // TODO: 2020-04-21  从encoder取出的ByteBuffer的缓冲区最大设置为了4096
-                //  由MediaFormat.KEY_INPUT_MAX_SIZE指定 如果输入的buffer大小超过了这个缓冲区大小，则会抛出BufferOverflowException
-                ByteBuffer byteBuffer = encoder.getInputBuffers()[inputBufferIndex];
-                // TODO: 2020-04-21 暂时不删除以下代码 用于分析 buffer的容量与设置的format的关系
-                int capacity = byteBuffer.capacity();
-                int inputMaxSize = encodeFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
+    public void encodePcmToAAC(final int size, final byte[] inputBuffer) {
+        // Skipped 60 frames!  The application may be doing too much work on its main thread. 开启一个线程 防止阻塞主线程
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (inputBuffer != null && encoder != null) {
+                            int inputBufferIndex = encoder.dequeueInputBuffer(-1);
+                            if (inputBufferIndex >= 0) {
+                                //录制时间计算 通过需要编码的大小除以（采样率*声道*位宽）
+                                recordTime += size * 1.0f / (audioSampleRate * 2 * 2);
 
-                byteBuffer.clear();
-                byteBuffer.put(inputBuffer);
-                encoder.queueInputBuffer(inputBufferIndex, 0, size, 0, 0);
-            }
+                                if (onRecordAudioTimeListener != null) {
+                                    //将结果回调给用户
+                                    Log.d(TAG, "record time:" + recordTime);
+                                    onRecordAudioTimeListener.recordTime((int) recordTime);
+                                }
+                                // TODO: 2020-04-21  从encoder取出的ByteBuffer的缓冲区最大设置为了4096
+                                //  由MediaFormat.KEY_INPUT_MAX_SIZE指定 如果输入的buffer大小超过了这个缓冲区大小，则会抛出BufferOverflowException
+                                ByteBuffer byteBuffer = encoder.getInputBuffers()[inputBufferIndex];
+                                // TODO: 2020-04-21 暂时不删除以下代码 用于分析 buffer的容量与设置的format的关系
+                                int capacity = byteBuffer.capacity();
+                                int inputMaxSize = encodeFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
 
-            int index = encoder.dequeueOutputBuffer(bufferInfo, 0);
-            while (index >= 0) {
-                try {
-                    perPcmSize = bufferInfo.size + 7;
-                    outByteBuffer = new byte[perPcmSize];
+                                byteBuffer.clear();
+                                byteBuffer.put(inputBuffer);
+                                encoder.queueInputBuffer(inputBufferIndex, 0, size, 0, 0);
+                            }
 
-                    ByteBuffer byteBuffer = encoder.getOutputBuffers()[index];
-                    byteBuffer.position(bufferInfo.offset);
-                    byteBuffer.limit(bufferInfo.offset + bufferInfo.size);
+                            int index = encoder.dequeueOutputBuffer(bufferInfo, 0);
+                            while (index >= 0) {
+                                try {
+                                    perPcmSize = bufferInfo.size + 7;
+                                    outByteBuffer = new byte[perPcmSize];
 
-                    addADTSHeader(outByteBuffer, perPcmSize, aacSampleRateIndex);
+                                    ByteBuffer byteBuffer = encoder.getOutputBuffers()[index];
+                                    byteBuffer.position(bufferInfo.offset);
+                                    byteBuffer.limit(bufferInfo.offset + bufferInfo.size);
 
-                    byteBuffer.get(outByteBuffer, 7, bufferInfo.size);
-                    byteBuffer.position(bufferInfo.offset);
-                    outputStream.write(outByteBuffer, 0, perPcmSize);
+                                    addADTSHeader(outByteBuffer, perPcmSize, aacSampleRateIndex);
 
-                    encoder.releaseOutputBuffer(index, false);
-                    index = encoder.dequeueOutputBuffer(bufferInfo, 10000);
-                    outByteBuffer = null;
-                } catch (IOException e) {
-                    e.printStackTrace();
+                                    byteBuffer.get(outByteBuffer, 7, bufferInfo.size);
+                                    byteBuffer.position(bufferInfo.offset);
+                                    outputStream.write(outByteBuffer, 0, perPcmSize);
+
+                                    encoder.releaseOutputBuffer(index, false);
+                                    index = encoder.dequeueOutputBuffer(bufferInfo, 0);
+                                    outByteBuffer = null;
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
+        ).start();
+
+
     }
 
     /**

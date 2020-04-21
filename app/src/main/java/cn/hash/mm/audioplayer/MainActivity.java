@@ -1,11 +1,9 @@
 package cn.hash.mm.audioplayer;
 
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -30,6 +28,7 @@ import cn.hash.mm.nativelib.listener.OnPlayCompleteListener;
 import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
 import cn.hash.mm.nativelib.listener.OnPlayLoadListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
+import cn.hash.mm.nativelib.listener.OnRecordAudioTimeListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
 import cn.hash.mm.nativelib.util.TimeUtil;
 
@@ -38,23 +37,18 @@ import cn.hash.mm.nativelib.util.TimeUtil;
  */
 
 
-public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener, OnPlayLoadListener, OnPlayCompleteListener, OnPrepareListener, OnCurrentAudioDbListener {
+public class MainActivity extends AppCompatActivity implements OnPauseResumeListener, OnTimeInfoListener, OnPlayErrorListener, SeekBar.OnSeekBarChangeListener, OnPlayLoadListener, OnPlayCompleteListener, OnPrepareListener, OnCurrentAudioDbListener, OnRecordAudioTimeListener {
 
     private PlayController playController;
     private boolean isPlaying = false;
-    private TextView tvPlayTime, tvVolume, tvDb;
+    private TextView tvPlayTime, tvVolume, tvDb, tvRecordTime;
     protected boolean isSeekPosition = false;
     private int currentPosition = 0;
     private AppCompatSeekBar volumeSeekBar, positionSeekBar;
 
-    private AudioManager audioManager;
-
 
     private static final int defaultVolume = 40;
 
-    private int stepVolume = 0;
-
-    private int currentVolume = 0;
 
     private Handler handler = new Handler() {
         @Override
@@ -74,6 +68,11 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
                 case 2:
                     int db = (int) msg.obj;
                     tvDb.setText("分贝:" + db);
+                    break;
+
+                case 3:
+                    String recordTime = (String) msg.obj;
+                    tvRecordTime.setText("当前录制时间:" + recordTime);
                     break;
 
 
@@ -96,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         tvPlayTime = findViewById(R.id.tvPlayTime);
         tvVolume = findViewById(R.id.tvVolume);
         volumeSeekBar = findViewById(R.id.volume_seek);
+        tvRecordTime = findViewById(R.id.tvRecordTime);
         tvDb = findViewById(R.id.tvDb);
         positionSeekBar = findViewById(R.id.position_seek);
 
@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         playController.setOnPlayErrorListener(this);
         playController.setOnPrepareListener(this);
         playController.setOnCurrentAudioDbListener(this);
+        playController.setOnRecordAudioTimeListener(this);
         volumeSeekBar.setOnSeekBarChangeListener(this);
         positionSeekBar.setOnSeekBarChangeListener(this);
 
@@ -326,5 +327,14 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
     public void stopRecord(View view) {
         playController.stopRecord(false);
+    }
+
+    @Override
+    public void recordTime(int time) {
+        String formatTime = TimeUtil.secToDataFormat(time, time);
+        Message message = Message.obtain();
+        message.what = 3;
+        message.obj = formatTime;
+        handler.sendMessage(message);
     }
 }

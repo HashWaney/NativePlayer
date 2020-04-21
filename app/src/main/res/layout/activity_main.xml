@@ -190,19 +190,29 @@
 
         <Button
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="继续录制"
             android:onClick="resumeRecord"
-            android:layout_height="wrap_content" />
+            android:text="继续录制" />
 
         <Button
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="停止录制"
             android:onClick="stopRecord"
-            android:layout_height="wrap_content" />
+            android:text="停止录制" />
 
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvRecordTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+
+        android:text="当前录制时间:" />
 
 
 </LinearLayout>
