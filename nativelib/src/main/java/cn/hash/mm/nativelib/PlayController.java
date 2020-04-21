@@ -1,7 +1,15 @@
 package cn.hash.mm.nativelib;
 
+import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaFormat;
 import android.text.TextUtils;
 import android.util.Log;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import cn.hash.mm.nativelib.bean.AudioInfoBean;
 import cn.hash.mm.nativelib.bean.MuteType;
@@ -12,6 +20,7 @@ import cn.hash.mm.nativelib.listener.OnPlayErrorListener;
 import cn.hash.mm.nativelib.listener.OnPlayLoadListener;
 import cn.hash.mm.nativelib.listener.OnPrepareListener;
 import cn.hash.mm.nativelib.listener.OnTimeInfoListener;
+import cn.hash.mm.nativelib.util.NativeLibLogUtil;
 
 /**
  * Created by Hash on 2020-04-13.
@@ -44,6 +53,8 @@ public class PlayController {
 
     private static float pitch = 1.0f;
     private static float speed = 1.0f;
+
+    private static boolean isStartRecord = false;
 
     private static int db = 0;
     private static MuteType muteType = MuteType.MUTE_TYPE_CENTER;
@@ -230,16 +241,156 @@ public class PlayController {
 
     }
 
+    //12.设置变速
     public void setSpeed(float s) {
         speed = s;
         n_setSpeed(speed);
 
     }
 
+    //13.设置变调
     public void setPitch(float p) {
         pitch = p;
         n_setPitch(pitch);
     }
+
+    //14. 边播放边录制
+    public void startRecord(boolean start, File recordFile) {
+        isStartRecord = start;
+        //如果采样率大于0 说明这个时候有音频数据，认定为有效录制
+        Log.d(TAG, "startRecord :" + n_getSampleRate());
+        if (n_getSampleRate() > 0) {
+            Log.d(TAG, "sample is valid" + n_getSampleRate());
+            initMediaCodec(n_getSampleRate(), recordFile);
+        }
+
+
+        n_startRecord(isStartRecord);
+    }
+
+
+    public void pauseRecord(boolean record) {
+        isStartRecord = record;
+        n_pauseRecord(isStartRecord);
+
+
+    }
+
+    public void resumeRecord(boolean record) {
+        isStartRecord = record;
+        n_resumeRecord(isStartRecord);
+    }
+
+    public void stopRecord(boolean record) {
+        isStartRecord = record;
+        n_stopRecord(isStartRecord);
+
+    }
+
+    ////////////////////////mediaCodec aac ///////////////////////////////////
+    /**
+     * 背景知识，acc 需要添加头部信息，在编码aac 裸流数据的时候，如果没有为aac增加头信息是不能正常播放的，
+     * 头信息一般是7个字节，头信息一般会包含采样率，声道，数据帧的长度等信息，这样编码器才能解析
+     */
+    private int aacSampleRateIndex = 4; // 默认是 44.1Khz对应的采样率下标
+    private MediaFormat encodeFormat = null; //媒体格式
+    private FileOutputStream outputStream = null; //文件输出流，将编码之后的数据写入到文件中
+    private MediaCodec.BufferInfo bufferInfo = null;//用于更新缓冲区元数据信息
+    private int perPcmSize = 0; //每一帧pcm的大小
+    private byte[] outByteBuffer = null;//输出的aac的缓冲区
+
+    private MediaCodec encoder = null;//编码器用于将pcm数据编码为aac
+
+
+    private void initMediaCodec(int sampleRate, File recordFile) {
+
+        try {
+            //1.根据采样率换算成aac头信息 采样率下标sampling_frequency_index
+            aacSampleRateIndex = getADTSSampleRate(sampleRate);
+            //2。创建Audio格式
+            encodeFormat = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate,
+                    2);
+            //设置传输比特率
+            encodeFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000);
+            //设置AAC profile
+            encodeFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+            //设置最大的输入
+            encodeFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);
+
+            //初始化缓冲区信息
+            bufferInfo = new MediaCodec.BufferInfo();
+            //创建编码器
+            encoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);
+            if (encoder == null) {
+                NativeLibLogUtil.logD("encoder is null");
+                return;
+            }
+            //component as an encoder. MediaCodec.CONFIGURE_FLAG_ENCODER 将mediaCodec 视为一个编码器
+            encoder.configure(encodeFormat, null, null,
+                    MediaCodec.CONFIGURE_FLAG_ENCODE);
+            outputStream = new FileOutputStream(recordFile);
+            //开启编码器
+            encoder.start();
+        } catch (IOException e) {
+            Log.d(TAG, "create media Codec:" + e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+
+
+    }
+
+    /**
+     * 根据每一帧返回的采样率 获取到对应的ADTS中对应的采样率角标
+     *
+     * @param sampleRate
+     * @return
+     */
+    private int getADTSSampleRate(int sampleRate) {
+        int rate = 4;
+        switch (sampleRate) {
+            case 96000:
+                rate = 0;
+                break;
+            case 88200:
+                rate = 1;
+                break;
+            case 64000:
+                rate = 2;
+                break;
+            case 48000:
+                rate = 3;
+                break;
+            case 44100:
+                rate = 4;
+                break;
+            case 32000:
+                rate = 5;
+                break;
+            case 24000:
+                rate = 6;
+                break;
+            case 22050:
+                rate = 7;
+                break;
+            case 16000:
+                rate = 8;
+                break;
+            case 12000:
+                rate = 9;
+                break;
+            case 11025:
+                rate = 10;
+                break;
+            case 8000:
+                rate = 11;
+                break;
+            case 7350:
+                rate = 12;
+                break;
+        }
+        return rate;
+    }
+
 
     ///////////////////native callback////////////////////////////////////
     public void prepareCallBackFormNative() {
@@ -292,7 +443,7 @@ public class PlayController {
         }
     }
 
-
+    //错误回调
     public void errMessageFromNative(int errorCode, String errorMessage) {
         // TODO: 2020-04-16  播放出错 回收资源
         stopAndRelease(-1);
@@ -300,6 +451,75 @@ public class PlayController {
         if (onPlayErrorListener != null) {
             onPlayErrorListener.onError(errorCode, errorMessage);
         }
+    }
+
+
+    /**
+     * 获取pcm数据进行编码成aac
+     *
+     * @param size        音频帧的大小
+     * @param inputBuffer 音频帧的输入字节数据
+     */
+    public void encodePcmToAAC(int size, byte[] inputBuffer) {
+        if (inputBuffer != null && encoder != null) {
+            Log.d(TAG, "encode Pcm to AAC");
+            int inputBufferIndex = encoder.dequeueInputBuffer(-1);
+            if (inputBufferIndex >= 0) {
+                ByteBuffer byteBuffer = encoder.getInputBuffers()[inputBufferIndex];
+                byteBuffer.clear();
+                byteBuffer.put(inputBuffer);
+                encoder.queueInputBuffer(inputBufferIndex, 0, size, 0, 0);
+            }
+
+            int index = encoder.dequeueOutputBuffer(bufferInfo, 0);
+            while (index >= 0) {
+                try {
+                    perPcmSize = bufferInfo.size + 7;
+                    outByteBuffer = new byte[perPcmSize];
+
+                    ByteBuffer byteBuffer = encoder.getOutputBuffers()[index];
+                    byteBuffer.position(bufferInfo.offset);
+                    byteBuffer.limit(bufferInfo.offset + bufferInfo.size);
+
+                    addADTSHeader(outByteBuffer, perPcmSize, aacSampleRateIndex);
+
+                    byteBuffer.get(outByteBuffer, 7, bufferInfo.size);
+                    byteBuffer.position(bufferInfo.offset);
+                    outputStream.write(outByteBuffer, 0, perPcmSize);
+
+                    encoder.releaseOutputBuffer(index, false);
+                    index = encoder.dequeueOutputBuffer(bufferInfo, 10000);
+                    outByteBuffer = null;
+                    Log.d(TAG, "编码...");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * 添加adts头部信息
+     *
+     * @param outByteBuffer      头信息的byte容器
+     * @param perPcmSize         数据帧的大小
+     * @param aacSampleRateIndex 采样率角标
+     */
+    private void addADTSHeader(byte[] outByteBuffer, int perPcmSize, int aacSampleRateIndex) {
+
+        int profile = 2;//AAC LC
+        int freIndex = aacSampleRateIndex;//采样率下标
+        int channelConfig = 2;//CPE
+
+        outByteBuffer[0] = (byte) 0xFF;
+        outByteBuffer[1] = (byte) 0xF9;
+        outByteBuffer[2] = (byte) (((profile - 1) << 6) + (freIndex << 2) + (channelConfig >> 2));
+        outByteBuffer[3] = (byte) (((channelConfig & 3) << 6) + (perPcmSize >> 11));
+        outByteBuffer[4] = (byte) ((perPcmSize & 0x7FF) >> 3);
+        outByteBuffer[5] = (byte) (((perPcmSize & 7) << 5) + 0x1F);
+        outByteBuffer[6] = (byte) 0xFC;
+
+
     }
 
 
@@ -325,5 +545,18 @@ public class PlayController {
     public native void n_setSpeed(float speed);
 
     public native void n_setPitch(float pitch);
+
+    public native int n_getSampleRate();
+
+    public native void n_startRecord(boolean record);
+
+    public native void n_stopRecord(boolean record);
+
+
+    public native void n_pauseRecord(boolean record);
+
+
+    public native void n_resumeRecord(boolean record);
+
 
 }

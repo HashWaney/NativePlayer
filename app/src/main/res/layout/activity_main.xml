@@ -168,10 +168,41 @@
             android:textAllCaps="false" />
 
     </LinearLayout>
-    <Button
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:text="开始录制"
-        android:onClick="startRecord"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="startRecord"
+            android:text="开始录制" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="pauseRecord"
+            android:text="暂停录制" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="继续录制"
+            android:onClick="resumeRecord"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="停止录制"
+            android:onClick="stopRecord"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
 
 </LinearLayout>

@@ -14,7 +14,7 @@ FFmpegController *fFmpegController = NULL;
 
 PlayStatus *playStatus = NULL;
 
-_JavaVM *javaVM = NULL;
+JavaVM *javaVM = NULL;
 
 int isExit = 0;
 
@@ -55,8 +55,8 @@ Java_cn_hash_mm_nativelib_PlayController_n_1prepare(JNIEnv *env, jobject instanc
             javaBridge = new JavaBridge(javaVM, env, &instance);
         }
         javaBridge->onCallLoad(MAIN_THREAD, true);
-        playStatus =new PlayStatus();
-        fFmpegController = new FFmpegController(playStatus,javaBridge, url);
+        playStatus = new PlayStatus();
+        fFmpegController = new FFmpegController(playStatus, javaBridge, url);
         //函数只能调用一次啊 不能反复调用啊 TODO ? why
         fFmpegController->prepare();
     }
@@ -167,6 +167,52 @@ JNIEXPORT void JNICALL
 Java_cn_hash_mm_nativelib_PlayController_n_1setPitch(JNIEnv *env, jobject instance, jfloat pitch) {
     if (fFmpegController != NULL) {
         fFmpegController->setPitch(pitch);
+    }
+
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1getSampleRate(JNIEnv *env, jobject instance) {
+    if (fFmpegController != NULL) {
+        return fFmpegController->getSampleRate();
+    }
+
+    return 0;
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1startRecord(JNIEnv *env, jobject instance,
+                                                        jboolean record) {
+
+    if (fFmpegController != NULL) {
+        fFmpegController->startRecord(record);
+    }
+
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1stopRecord(JNIEnv *env, jobject instance,
+                                                       jboolean record) {
+
+    if (fFmpegController != NULL) {
+        fFmpegController->stopRecord(record);
+    }
+
+
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1pauseRecord(JNIEnv *env, jobject instance,
+                                                        jboolean record) {
+
+    if (fFmpegController != NULL) {
+        fFmpegController->pauseRecord(record);
+    }
+
+}extern "C"
+JNIEXPORT void JNICALL
+Java_cn_hash_mm_nativelib_PlayController_n_1resumeRecord(JNIEnv *env, jobject instance,
+                                                         jboolean record) {
+    if (fFmpegController != NULL) {
+        fFmpegController->resumeRecord(record);
     }
 
 }

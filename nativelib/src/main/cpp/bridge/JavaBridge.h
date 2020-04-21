@@ -6,6 +6,7 @@
 #ifndef AUDIOPLAYER_JAVABRIDGE_H
 #define AUDIOPLAYER_JAVABRIDGE_H
 
+#include <cstddef>
 #include "jni.h"
 #include "../log/AudioLog.h"
 
@@ -30,6 +31,7 @@ public:
     jmethodID method_errorMessage; //错误信息的回调
     jmethodID method_complete; //播放完成的回调
     jmethodID method_db;//db获取
+    jmethodID  method_pcmtoaac;//获取pcm数据
 public:
     JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj);
 
@@ -48,6 +50,8 @@ public:
     void onCallComplete(int type, bool isComplete);
 
     void onCallVolumeDb(int type, int db);
+
+    void onCallPcmToAAC(int type, int size, void *buffer);
 };
 
 

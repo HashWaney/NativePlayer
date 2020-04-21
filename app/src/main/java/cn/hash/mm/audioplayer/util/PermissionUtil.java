@@ -29,12 +29,16 @@ public class PermissionUtil {
 
     public static final int STORE_REQUEST_CODE = 10001;
 
+    public static void setContext(Context ctx) {
+        context = ctx;
+    }
+
     public static boolean checkHasStoragePermission(Context ctx) {
         //6.0以上
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             return ActivityCompat.checkSelfPermission(ctx, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
-        context = ctx;
+
         return true;
     }
 

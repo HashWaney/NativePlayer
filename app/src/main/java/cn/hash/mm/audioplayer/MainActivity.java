@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
     private int currentVolume = 0;
 
-    private Handler timeInfoHandler = new Handler() {
+    private Handler handler = new Handler() {
         @Override
         public void handleMessage(@NonNull Message msg) {
             // TODO: 2020-04-15
@@ -70,6 +71,10 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
                     }
 
                     break;
+                case 2:
+                    int db = (int) msg.obj;
+                    tvDb.setText("分贝:" + db);
+                    break;
 
 
             }
@@ -77,16 +82,17 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
     };
 
 
-    private String net_url = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "fyjili.mp3";
+    private String url = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "fyjili.mp3";
 
-    private String url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
-    private String broadcast_url = "http://ngcdn004.cnr.cn/live/dszs/index12.m3u8";
+    private String net_url = "http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3";
+    private String broadcast_url = "http://ngcdn004.cnr.cn/live/dszs/index.m3u8";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         PermissionUtil.requestPermission(this);
+        PermissionUtil.setContext(this);
         tvPlayTime = findViewById(R.id.tvPlayTime);
         tvVolume = findViewById(R.id.tvVolume);
         volumeSeekBar = findViewById(R.id.volume_seek);
@@ -168,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
         Message message = Message.obtain();
         message.what = 1;
         message.obj = audioInfoBean;
-        timeInfoHandler.sendMessage(message);
+        handler.sendMessage(message);
     }
 
     @Override
@@ -298,14 +304,27 @@ public class MainActivity extends AppCompatActivity implements OnPauseResumeList
 
     @Override
     public void setCurrentDb(final int db) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                tvDb.setText("分贝值:" + db);
-            }
-        });
+        Message message = Message.obtain();
+        message.what = 2;
+        message.obj = db;
+        handler.sendMessage(message);
     }
 
     public void startRecord(View view) {
+        playController.startRecord(true, new File(Environment.getExternalStorageDirectory() + File.separator + "pcmToAcc.aac"));
+    }
+
+
+    public void pauseRecord(View view) {
+        playController.pauseRecord(false);
+    }
+
+    public void resumeRecord(View view) {
+        playController.resumeRecord(true);
+    }
+
+
+    public void stopRecord(View view) {
+        playController.stopRecord(false);
     }
 }

@@ -33,24 +33,36 @@ void *play_musicCallback(void *data) {
 }
 
 void pcmPlayBufferQueueCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
-    AudioController *wlAudio = (AudioController *) context;
-    if (wlAudio != NULL) {
-        int buffersize = wlAudio->getSoundTouchData();
+    AudioController *audioController = (AudioController *) context;
+    if (audioController != NULL) {
+        int buffersize = audioController->getSoundTouchData();
         if (buffersize > 0) {
-            wlAudio->clock += buffersize / ((double) (wlAudio->sample_rate * 2 * 2));
-            if (wlAudio->clock - wlAudio->last_time >= 0.1) {
-                wlAudio->last_time = wlAudio->clock;
+            audioController->clock +=
+                    buffersize / ((double) (audioController->sample_rate * 2 * 2));
+            if (audioController->clock - audioController->last_time >= 0.1) {
+                audioController->last_time = audioController->clock;
                 //回调应用层
-                wlAudio->javaBridge->onCallTimeInfo(TASK_THREAD, wlAudio->clock, wlAudio->duration);
+                audioController->javaBridge->onCallTimeInfo(TASK_THREAD, audioController->clock,
+                                                            audioController->duration);
             }
-            //回调当前处理的音量的分贝值
-            wlAudio->javaBridge->onCallVolumeDb(TASK_THREAD, wlAudio->getAudioDb(
-                    reinterpret_cast<char *>(wlAudio->sound_touch_out_buffer), buffersize * 4));
+            //回调当前处理的音量的分贝值 buffersize 采样个数 2位宽 2 声道数
+            audioController->javaBridge->onCallVolumeDb(TASK_THREAD, audioController->getAudioDb(
+                    reinterpret_cast<char *>(audioController->sound_touch_out_buffer),
+                    buffersize * 2 * 2));
+
+            if (audioController->record) {
+                //回调pcm数据进行aac编码
+                audioController->javaBridge->onCallPcmToAAC(TASK_THREAD, buffersize * 2 * 2,
+                                                            audioController->sound_touch_out_buffer);
+            }
+
+
 
             //将缓冲区的数据加入到播放队列中。
-            (*wlAudio->androidSimpleBufferQueueItf)->Enqueue(wlAudio->androidSimpleBufferQueueItf,
-                                                             (char *) wlAudio->sound_touch_out_buffer,
-                                                             buffersize * 2 * 2);
+            (*audioController->androidSimpleBufferQueueItf)->Enqueue(
+                    audioController->androidSimpleBufferQueueItf,
+                    (char *) audioController->sound_touch_out_buffer,
+                    buffersize * 2 * 2);
         }
     }
 
@@ -400,7 +412,6 @@ int AudioController::getSoundTouchData() {
             //TODO out_buffer 是用来接收重采样之后的数据的。
             data_size = resampleAudio(reinterpret_cast<void **>(&out_buffer));
             if (data_size > 0) {
-                LOG_E("data size %d",data_size);
                 for (int i = 0; i < data_size / 2 + 1; i++) {
                     sound_touch_out_buffer[i] = (out_buffer[i * 2] |
                                                  ((out_buffer[i * 2 + 1]) << 8));
@@ -413,13 +424,12 @@ int AudioController::getSoundTouchData() {
                                                                   data_size / 4);
             } else {
                 //将最后一次的数据刷新到
-                LOG_E("soundTouch flush")
                 soundTouch->flush();
             }
         }
         //如果为0 说明从soundTouch 读取的数据为0，继续下一次循环
         if (soundTouchReceiveNum == 0) {
-            LOG_E("soundTouch is 0");
+
             finish = true;
             continue;
         } else {
@@ -427,19 +437,18 @@ int AudioController::getSoundTouchData() {
             //TODO bug发现 sound_touch_out_buffer ==NULL 判断条件写错了。 这里需要读取重采样的数据帧，如果为空，则需要调用receiveSample方法重新获取。
             // 如果out_buffer里面没有值了，就需要从soundTouch的buffer队列中获取数据，
             if (out_buffer == NULL) {
-                LOG_E("out buffer is null");
+
                 //soundTouchReceiveNum 不等于0 说明可以读取到SoundTouch处理的数据。
                 soundTouchReceiveNum = soundTouch->receiveSamples(sound_touch_out_buffer,
                                                                   data_size / 4);
-                LOG_E("soundTouchReceiveNum %d",soundTouchReceiveNum);
                 if (soundTouchReceiveNum == 0) {
                     //继续下一次循环，
                     finish = true;
                     continue;
                 }
-            }else{
+            } else {
                 //不为空，暂不做处理。
-                LOG_E("out buffer is not null");
+
             }
             //将最终从读取的经过soundTouch处理的数据放入到播放队列中进行播放。
             return soundTouchReceiveNum;
@@ -461,21 +470,40 @@ void AudioController::setSpeed(float speed) {
         soundTouch->setTempo(speed);
     }
 }
-//
+
 int AudioController::getAudioDb(char *pcmData, size_t d) {
     int db = 0;
     short int pervalue = 0;
     double sum = 0;
-    for(int i = 0; i < d; i+= 2)
-    {
-        memcpy(&pervalue, pcmData+i, 2);
+    for (int i = 0; i < d; i += 2) {
+        memcpy(&pervalue, pcmData + i, 2);
         sum += abs(pervalue);
     }
     sum = sum / (d / 2);
-    if(sum > 0)
-    {
-        db = (int)20.0 *log10(sum);
+    if (sum > 0) {
+        db = (int) 20.0 * log10(sum);
     }
     return db;
+}
+
+void AudioController::startRecord(bool b) {
+    this->record = b;
+
+
+}
+
+void AudioController::pauseRecord(bool record) {
+    this->record = record;
+
+}
+
+void AudioController::resumeRecord(bool record) {
+    this->record = record;
+
+}
+
+void AudioController::stopRecord(bool record) {
+    this->record = record;
+
 }
 

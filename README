@@ -97,3 +97,8 @@
 
 -4.20 梳理soundTouch变速变调的流程，
       详细查看AudioController.cpp中的getSoundTouchData方法
+
+
+-4.20 实现边播放边录制功能
+
+    关于AAC头信息 参考https://blog.csdn.net/jay100500/article/details/52955232

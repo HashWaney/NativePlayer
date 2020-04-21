@@ -51,7 +51,6 @@ int avformat_callback(void *data) {
 }
 
 
-
 //2.准备工作（解码操作）
 void FFmpegController::prepareTask() {
 
@@ -91,7 +90,7 @@ void FFmpegController::prepareTask() {
     LOG_D("open input success");
 
     //5.判断读取的媒体信息是否包含流信息
-    if (avformat_find_stream_info(avFormatContext, NULL)<0) {
+    if (avformat_find_stream_info(avFormatContext, NULL) < 0) {
         LOG_E("can not find streams from %s", url);
         if (javaBridge != NULL) {
             javaBridge->onCallErrMessage(TASK_THREAD, 1002, "can not find streams from url");;
@@ -383,6 +382,41 @@ void FFmpegController::setPitch(float pitch) {
 void FFmpegController::setSpeed(float speed) {
     if (audioController != NULL) {
         audioController->setSpeed(speed);
+    }
+
+}
+
+int FFmpegController::getSampleRate() {
+    if (audioController != NULL) {
+        return audioController->avCodecContext->sample_rate;
+    }
+    return 0;
+}
+
+void FFmpegController::startRecord(bool record) {
+    if (audioController != NULL) {
+        audioController->startRecord(record);
+    }
+
+}
+
+void FFmpegController::pauseRecord(bool record) {
+    if (audioController != NULL) {
+        audioController->pauseRecord(record);
+    }
+
+}
+
+void FFmpegController::resumeRecord(bool record) {
+    if (audioController != NULL) {
+        audioController->resumeRecord(record);
+    }
+
+}
+
+void FFmpegController::stopRecord(bool record) {
+    if (audioController != NULL) {
+        audioController->stopRecord(record);
     }
 
 }

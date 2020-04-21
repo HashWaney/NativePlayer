@@ -95,6 +95,8 @@ public:
     int number = 0;
     int soundTouchReceiveNum = 0;
 
+    bool record = false;
+
 
 public:
     AudioController(JavaBridge *javaBridge, PlayStatus *playStatus, int sample_rate);
@@ -128,6 +130,14 @@ public:
     void setSpeed(float speed);
 
     int getAudioDb(char *pcmData, size_t d);
+
+    void startRecord(bool record);
+
+    void pauseRecord(bool record);
+
+    void resumeRecord(bool record);
+
+    void stopRecord(bool record);
 
 };
 

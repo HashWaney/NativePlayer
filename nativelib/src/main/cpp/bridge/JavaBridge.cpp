@@ -24,6 +24,7 @@ JavaBridge::JavaBridge(_JavaVM *javaVM, JNIEnv *env, jobject *jobj) {
     method_load = env->GetMethodID(java_clazz, "callLoadFromNative", "(Z)V");
     method_complete = env->GetMethodID(java_clazz, "callCompleteFromNative", "(Z)V");
     method_db = env->GetMethodID(java_clazz, "callDbFromNative", "(I)V");
+    method_pcmtoaac = env->GetMethodID(java_clazz, "encodePcmToAAC", "(I[B)V");
 
 }
 
@@ -133,5 +134,31 @@ void JavaBridge::onCallVolumeDb(int type, int db) {
     }
 
 }
+
+void JavaBridge::onCallPcmToAAC(int type, int size, void *buffer) {
+    if (type == MAIN_THREAD) {
+
+        jbyteArray jbuffer = env->NewByteArray(size);
+        env->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
+        env->CallVoidMethod(instance, method_pcmtoaac, size, jbuffer);
+        env->DeleteLocalRef(jbuffer);
+
+    } else {
+        JNIEnv *jniEnv;
+
+        if (vm->AttachCurrentThread(&jniEnv, 0) != JNI_OK) {
+            return;
+
+        }
+        jbyteArray jbuffer = jniEnv->NewByteArray(size);
+        jniEnv->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
+        jniEnv->CallVoidMethod(instance, method_pcmtoaac, size, jbuffer);
+        jniEnv->DeleteLocalRef(jbuffer);
+        vm->DetachCurrentThread();
+    }
+
+}
+
+
 
 
