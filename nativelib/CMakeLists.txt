@@ -19,6 +19,8 @@ add_library(
         src/main/cpp/queue/BufferQueue.cpp
         src/main/cpp/status/PlayStatus.cpp
         src/main/cpp/bridge/JavaBridge.cpp
+        src/main/cpp/splitpack/queue/PcmSplitQueue.cpp
+        src/main/cpp/splitpack/entity/PcmSplitEntity.cpp
         src/main/cpp/soundtouch/SoundTouch/AAFilter.cpp
         src/main/cpp/soundtouch/SoundTouch/FIFOSampleBuffer.cpp
         src/main/cpp/soundtouch/SoundTouch/FIRFilter.cpp

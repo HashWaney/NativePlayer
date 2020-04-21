@@ -10,6 +10,8 @@
 #include "../queue/BufferQueue.h"
 #include "../status/PlayStatus.h"
 #include "../bridge/JavaBridge.h"
+#include "../splitpack/queue/PcmSplitQueue.h"
+#include "../splitpack/entity/PcmSplitEntity.h"
 
 using namespace soundtouch;
 
@@ -96,6 +98,13 @@ public:
     int soundTouchReceiveNum = 0;
 
     bool record = false;
+
+
+    ///////pcm split pack//////////
+    pthread_t pcmBufferThread;
+    PcmSplitQueue *pcmSplitQueue = NULL;
+
+    int defaultSize = 4096;
 
 
 public:

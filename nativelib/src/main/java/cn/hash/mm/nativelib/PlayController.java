@@ -56,6 +56,10 @@ public class PlayController {
 
     private static boolean isStartRecord = false;
 
+    private static boolean initMediaCodec = false;
+
+    private static int audioSampleRate = 0;
+
     private static int db = 0;
     private static MuteType muteType = MuteType.MUTE_TYPE_CENTER;
 
@@ -78,9 +82,6 @@ public class PlayController {
     private static AudioInfoBean audioInfoBean = null;
 
 
-    public String getResource() {
-        return resource;
-    }
 
     public void setResource(String resource) {
         this.resource = resource;
@@ -256,22 +257,25 @@ public class PlayController {
 
     //14. 边播放边录制
     public void startRecord(boolean start, File recordFile) {
-        isStartRecord = start;
-        //如果采样率大于0 说明这个时候有音频数据，认定为有效录制
-        Log.d(TAG, "startRecord :" + n_getSampleRate());
-        if (n_getSampleRate() > 0) {
-            Log.d(TAG, "sample is valid" + n_getSampleRate());
-            initMediaCodec(n_getSampleRate(), recordFile);
+        if (!initMediaCodec) {
+            initMediaCodec = true;
+            isStartRecord = start;
+            //如果采样率大于0 说明这个时候有音频数据，认定为有效录制
+            audioSampleRate = n_getSampleRate();
+            if (audioSampleRate > 0) {
+                Log.d(TAG, "sample is valid" + audioSampleRate);
+                initMediaCodec(audioSampleRate, recordFile);
+            }
+            n_startRecord(isStartRecord);
         }
 
-
-        n_startRecord(isStartRecord);
     }
 
 
     public void pauseRecord(boolean record) {
         isStartRecord = record;
         n_pauseRecord(isStartRecord);
+        Log.d(TAG, "暂停录制:"+isStartRecord);
 
 
     }
@@ -279,11 +283,52 @@ public class PlayController {
     public void resumeRecord(boolean record) {
         isStartRecord = record;
         n_resumeRecord(isStartRecord);
+        Log.d(TAG, "继续录制");
     }
 
     public void stopRecord(boolean record) {
-        isStartRecord = record;
-        n_stopRecord(isStartRecord);
+        if (initMediaCodec) {
+            isStartRecord = record;
+            n_stopRecord(isStartRecord);
+            releaseMediaCodec();
+            Log.d(TAG, "完成录制");
+        }
+
+
+    }
+
+    private void releaseMediaCodec() {
+        if (encoder == null) {
+            return;
+        }
+
+        try {
+            outputStream.close();
+            outputStream = null;
+
+            encoder.stop();
+            encoder.release();
+            encoder = null;
+            bufferInfo = null;
+            encodeFormat = null;
+            initMediaCodec = false;
+            Log.d(TAG, "释放资源");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+
+                }
+                outputStream = null;
+            }
+
+        }
+
 
     }
 
@@ -462,10 +507,15 @@ public class PlayController {
      */
     public void encodePcmToAAC(int size, byte[] inputBuffer) {
         if (inputBuffer != null && encoder != null) {
-            Log.d(TAG, "encode Pcm to AAC");
             int inputBufferIndex = encoder.dequeueInputBuffer(-1);
             if (inputBufferIndex >= 0) {
+                // TODO: 2020-04-21  从encoder取出的ByteBuffer的缓冲区最大设置为了4096
+                //  由MediaFormat.KEY_INPUT_MAX_SIZE指定 如果输入的buffer大小超过了这个缓冲区大小，则会抛出BufferOverflowException
                 ByteBuffer byteBuffer = encoder.getInputBuffers()[inputBufferIndex];
+                // TODO: 2020-04-21 暂时不删除以下代码 用于分析 buffer的容量与设置的format的关系
+                int capacity = byteBuffer.capacity();
+                int inputMaxSize = encodeFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
+
                 byteBuffer.clear();
                 byteBuffer.put(inputBuffer);
                 encoder.queueInputBuffer(inputBufferIndex, 0, size, 0, 0);
@@ -490,7 +540,6 @@ public class PlayController {
                     encoder.releaseOutputBuffer(index, false);
                     index = encoder.dequeueOutputBuffer(bufferInfo, 10000);
                     outByteBuffer = null;
-                    Log.d(TAG, "编码...");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

@@ -25,11 +25,84 @@ AudioController::~AudioController() {
 }
 
 void *play_musicCallback(void *data) {
-    AudioController *wlAudio = (AudioController *) data;
+    AudioController *audioController = (AudioController *) data;
 
-    wlAudio->initOpenSLES();
+    audioController->initOpenSLES();
 
-    pthread_exit(&wlAudio->playThread);
+    pthread_exit(&audioController->playThread);
+}
+
+
+void *pcmToAACBufferCallBack(void *data) {
+    AudioController *audioController = (AudioController *) data;
+
+    while (audioController->playStatus && !audioController->playStatus->exit) {
+
+        PcmSplitEntity *pcmSplitEntity = NULL;
+
+        audioController->pcmSplitQueue->getPcmBuffer(&pcmSplitEntity);
+        if (pcmSplitEntity == NULL) { continue; }
+
+
+        if (pcmSplitEntity->bufferSize <= audioController->defaultSize) { //不用分包
+            //回调给Java层 将自身数据块大小和缓冲区数据回调出去即可
+            if (audioController->record) { //录制标志位
+                audioController->javaBridge->onCallPcmToAAC(TASK_THREAD, pcmSplitEntity->bufferSize,
+                                                            pcmSplitEntity->buffer);
+            }
+
+        } else {
+            //进行分包处理
+            //多少个包
+            int pack_split_num = pcmSplitEntity->bufferSize / audioController->defaultSize;
+
+            //分完包之后剩余的
+            int pack_split_left_num = pcmSplitEntity->bufferSize % audioController->defaultSize;
+
+            for (int i = 0; i < pack_split_num; i++) {
+                char *buffer = static_cast<char *>(malloc(audioController->defaultSize));
+                //拷贝分包数据到buffer中,每次拷贝audioController->defaultSize 个数，位置为p c
+                memcpy(buffer, pcmSplitEntity->buffer + i * audioController->defaultSize,
+                       audioController->defaultSize);
+
+                //回调buffer给Java
+                if (audioController->record) {
+                    audioController->javaBridge->onCallPcmToAAC(TASK_THREAD,
+                                                                audioController->defaultSize,
+                                                                buffer);
+                }
+
+                //释放buffer malloc 手动释放内存
+                free(buffer);
+                buffer = NULL;
+
+            }
+            if (pack_split_left_num > 0) {
+                char *buffer = static_cast<char *>(malloc(pack_split_left_num));
+
+                //经过了分包之后的位置，应该是当前buffer的位置+分了几个包大小
+                //buffer+ n*a 起始点
+                //b为余下的数据
+                //拷贝到bf中
+                memcpy(buffer,
+                       pcmSplitEntity->buffer + pack_split_num * audioController->defaultSize,
+                       pack_split_left_num);
+
+                //回调给Java 余下的数据块
+                if(audioController->record){
+                    audioController->javaBridge->onCallPcmToAAC(TASK_THREAD, pack_split_left_num,
+                                                                buffer);
+                }
+
+                free(buffer);
+                buffer = NULL;
+            }
+        }
+
+    }
+
+
+    pthread_exit(&audioController->pcmSplitQueue);
 }
 
 void pcmPlayBufferQueueCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
@@ -50,12 +123,17 @@ void pcmPlayBufferQueueCallBack(SLAndroidSimpleBufferQueueItf bf, void *context)
                     reinterpret_cast<char *>(audioController->sound_touch_out_buffer),
                     buffersize * 2 * 2));
 
-            if (audioController->record) {
-                //回调pcm数据进行aac编码
-                audioController->javaBridge->onCallPcmToAAC(TASK_THREAD, buffersize * 2 * 2,
-                                                            audioController->sound_touch_out_buffer);
-            }
+            //TODO 对此处的数据需要进行分包处理 暂时注释掉，
+//            if (audioController->record) {
+//                //回调pcm数据进行aac编码
+//                audioController->javaBridge->onCallPcmToAAC(TASK_THREAD, buffersize * 2 * 2,
+//                                                            audioController->sound_touch_out_buffer);
+//            }
 
+            //putPcmBuffer
+
+            audioController->pcmSplitQueue->putPcmBuffer(audioController->sound_touch_out_buffer,
+                                                         buffersize * 2 * 2);
 
 
             //将缓冲区的数据加入到播放队列中。
@@ -69,7 +147,9 @@ void pcmPlayBufferQueueCallBack(SLAndroidSimpleBufferQueueItf bf, void *context)
 }
 
 void AudioController::playMusic() {
+    pcmSplitQueue = new PcmSplitQueue(playStatus);
     pthread_create(&playThread, NULL, play_musicCallback, this);
+    pthread_create(&pcmBufferThread, NULL, pcmToAACBufferCallBack, this);
 
 }
 
@@ -309,6 +389,16 @@ void AudioController::resume() {
 }
 
 void AudioController::release() {
+
+    if (pcmSplitQueue != NULL) {
+        //把队列中的锁打开，防止阻塞，无法完成释放操作。
+        pcmSplitQueue->notifyThread();
+        //等待其他线程退出，然后退出pcmBufferThread线程
+        pthread_join(pcmBufferThread, NULL);
+        pcmSplitQueue->release();
+        delete (pcmSplitQueue);
+        pcmSplitQueue = NULL;
+    }
 
     if (bufferQueue != NULL) {
         delete (bufferQueue);
